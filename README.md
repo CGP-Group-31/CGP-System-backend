@@ -14,7 +14,6 @@ Built with **FastAPI**, **MSSQL**, **SQLAlchemy Core**, and **Firebase Cloud Mes
 - MSSQL (SQLAlchemy Core)
 - APScheduler
 - Firebase Cloud Messaging (FCM)
-- JWT Authentication
 - Windows + VS Code
 
 ---
