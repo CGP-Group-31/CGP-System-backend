@@ -9,7 +9,7 @@ Built with **FastAPI**, **MSSQL**, **SQLAlchemy Core**, and **Firebase Cloud Mes
 
 ## Tech Stack
 
-- Python 3.1
+- Python 3.14
 - FastAPI
 - MSSQL (SQLAlchemy Core)
 - APScheduler
