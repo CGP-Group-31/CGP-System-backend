@@ -18,8 +18,9 @@ Built with **FastAPI**, **MSSQL**, **SQLAlchemy Core**, and **Firebase Cloud Mes
 
 ---
 
-### 1️⃣ Clone the Repository
-### open the windows terminal
+###  Clone the Repository
+in that location
+# open the windows terminal
 
 python -m venv venv
 .\venv\Scripts\activate
@@ -31,3 +32,8 @@ You should see:
 Install Dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
+
+# TO RUN the app
+ uvicorn app.main:app --reload
+# open with SWAGGER
+http://127.0.0.1:8000/docs
