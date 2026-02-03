@@ -34,6 +34,8 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # TO RUN the app
+.\venv\Scripts\activate
+
  uvicorn app.main:app --reload
 # open with SWAGGER
 http://127.0.0.1:8000/docs
