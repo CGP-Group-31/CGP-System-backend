@@ -1,16 +1,37 @@
 from fastapi import FastAPI
+from sqlalchemy.exc import SQLAlchemyError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from app.core.exceptions import register_exception_handlers
+
+
 from app.api.v1.caregiver.auth.routes import router as caregiver_auth
+from app.core.exceptions import (
+    http_exception_handler,
+    sqlalchemy_exception_handler,
+    generic_exception_handler
+)
 # from app.api.v1.caregiver.profile.routes import router as caregiver_profile
 # from app.api.v1.caretaker.auth.routes import router as caretaker_auth
+
+
+
+
 
 app = FastAPI(
     title="Elder Care Backend",
     version="1.0.0"
 )
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
+app.add_exception_handler(Exception, generic_exception_handler)
+register_exception_handlers(app)
+
 
 app.include_router(caregiver_auth, prefix="/api/v1/caregiver", tags=["Caregiver"])
 # app.include_router(caregiver_profile, prefix="/api/v1/caregiver", tags=["Caregiver"])
 # app.include_router(caretaker_auth, prefix="/api/v1/caretaker", tags=["Caretaker"])
+
+
 
 
 
