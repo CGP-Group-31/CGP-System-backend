@@ -16,9 +16,7 @@ from .repository import create_caregiver, login_caregiver
 router = APIRouter(prefix="/auth", tags=["Caregivers"])
 router = APIRouter(prefix="/auth", tags=["Caregiver Auth"])
 
-@router.post(
-    "/register",
-    response_model=CaregiverCreateResponse,
+@router.post("/register", response_model=CaregiverCreateResponse,
     status_code=status.HTTP_201_CREATED
 )
 def register_caregiver(
