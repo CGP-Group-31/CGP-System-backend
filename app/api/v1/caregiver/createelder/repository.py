@@ -46,14 +46,12 @@ def create_relationship(
 
     return result.scalar()
 
-    
+    #later hash data
 def add_elder_records(db: Session, elder_id: int, data):
-    query = text("""
-        INSERT INTO ElderProfiles (ElderID, BloodType, Allergies, ChronicConditions,
+    query = text("""INSERT INTO ElderProfiles (ElderID, BloodType, Allergies, ChronicConditions,
             EmergencyNotes, PastSurgeries, PreferredDoctorID)
         OUTPUT INSERTED.ElderProfileID
-        VALUES (:elder_id, :blood_type, :allergies, :chronic_conditions,
-            :emergency_notes, :past_surgeries, :preferred_doctor_id)""")
+        VALUES (:elder_id, :blood_type, :allergies, :chronic_conditions, :emergency_notes, :past_surgeries, :preferred_doctor_id)""")
 
     result = db.execute(query, {
         "elder_id": elder_id,
@@ -66,3 +64,45 @@ def add_elder_records(db: Session, elder_id: int, data):
     })
 
     return result.scalar()
+
+ROLE_DOCTOR = 2  
+
+def all_doctors(db: Session):
+    query = text("""SELECT d.DoctorID AS doctor_id, u.FullName AS full_name,
+            d.Specialization AS specialization,
+            d.Hospital AS hospital FROM Doctor d
+        JOIN Users u ON u.UserID = d.DoctorID WHERE u.IsActive = 1 AND u.RoleID = :role_id""")
+
+    result = db.execute(query, {"role_id": ROLE_DOCTOR})
+    return result.mappings().all()
+
+
+# def unset_primary_contact(db: Session, elder_id: int):
+#     db.execute(
+#         text("""UPDATE EmergencyContacts SET IsPrimary = 0 WHERE ElderID = :elder_id"""),
+#         {"elder_id": elder_id}
+#     )
+
+# not sure the is primry state will be changed, when add a new contact is thatis not primary, check
+def create_emergency_contact(db: Session, data):
+    if data.is_primary:
+        db.execute(text("""UPDATE EmergencyContacts SET IsPrimary = 0 WHERE ElderID = :elder_id"""),
+            {"elder_id": data.elder_id})
+
+    db.execute(
+        text("""INSERT INTO EmergencyContacts (ElderID, ContactName, Phone, Relationship, IsPrimary)
+            VALUES (:elder_id, :contact_name, :phone, :relationship, :is_primary)"""),
+        data.dict()
+    )
+    db.commit()
+
+
+
+def get_emergency_contacts(db: Session, elder_id: int):
+    result = db.execute(
+        text("""SELECT ContactID, ElderID, ContactName, Phone, Relationship, IsPrimary
+            FROM EmergencyContacts WHERE ElderID = :elder_id"""),
+        {"elder_id": elder_id}
+    )
+
+    return result.mappings().all()

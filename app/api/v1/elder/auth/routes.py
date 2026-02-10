@@ -10,7 +10,7 @@ from .schemas import  ElderLogin, ElderLoginResponse
 # ElderCreate, ElderCreateResponse, ElderRelationship, ElderRelationshipResponse,
 router = APIRouter(prefix="/elder", tags=["Elder login"])
 
-# not sure / work
+# not sure / work /not tested, not add to mainpy, every new folder route need to add the main.py
 @router.post("/login")
 def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
 

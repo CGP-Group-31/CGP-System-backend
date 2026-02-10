@@ -1,6 +1,7 @@
 
 from pydantic import BaseModel, EmailStr
 from datetime import date
+from typing import Optional
 
 from pydantic import BaseModel, Field, EmailStr
 
@@ -59,3 +60,29 @@ class ElderProfile(BaseModel):
 class ElderProfileResponse(BaseModel):
     profile_id: int
 
+class DoctorResponse(BaseModel):
+    doctor_id: int
+    full_name: str
+    specialization: str
+    hospital: str
+
+
+class EmergencyContactCreate(BaseModel):
+    elder_id: int
+    contact_name: str = Field(max_length=100)
+    phone: str = Field(min_length=8, max_length=15)
+    relationship: Optional[str] = None
+    is_primary: bool = False
+
+
+class EmergencyContactResponse(BaseModel):
+    contact_id: int = Field(alias="ContactID")
+    elder_id: int = Field(alias="ElderID")
+    contact_name: Optional[str] = Field(alias="ContactName")
+    phone: str = Field(alias="Phone")
+    relationship: Optional[str] = Field(alias="Relationship")
+    is_primary: bool = Field(alias="IsPrimary")
+
+    class Config:
+        populate_by_name = True
+        from_attributes = True

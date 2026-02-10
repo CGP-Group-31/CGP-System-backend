@@ -3,12 +3,17 @@ from sqlalchemy.exc import SQLAlchemyError
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
+from typing import List
 from app.core.security import verify_password
 from app.core.database import get_db
-from .repository import create_elder, create_relationship, add_elder_records
-from .schemas import  ElderProfile , ElderRegisterRequest, ElderRegisterResponse,ElderProfileResponse
+from .repository import create_elder, create_relationship, add_elder_records, all_doctors
+from .schemas import  ElderProfile , ElderRegisterRequest, ElderRegisterResponse,ElderProfileResponse, DoctorResponse
+from .schemas import EmergencyContactCreate, EmergencyContactResponse
+from .repository import create_emergency_contact, get_emergency_contacts
+
+
 # ElderCreate, ElderCreateResponse, ElderRelationship, ElderRelationshipResponse,
-router = APIRouter(prefix="/elder", tags=["Elder Create"])
+router = APIRouter(prefix="/elder-create", tags=["Elder Create"])
 
 # @router.post("/register", response_model=ElderCreateResponse, status_code=status.HTTP_201_CREATED)
 # def register_elder(data: ElderCreate, db: Session = Depends(get_db)):
@@ -88,3 +93,36 @@ def add_elder_profile(
             detail="Failed to create elder profile"
         )
 
+
+@router.get("/all-doctors",response_model=list[DoctorResponse], status_code=status.HTTP_200_OK)
+def get_all_doctors(db: Session = Depends(get_db)):
+    doctors = all_doctors(db)
+
+    if not doctors:
+        raise HTTPException(
+            status_code=404,
+            detail="No doctors found"
+        )
+
+    return doctors
+
+
+@router.post("/emergency-contacts", status_code=201)
+def add_emergency_contact(
+    payload: EmergencyContactCreate,
+    db: Session = Depends(get_db)
+):
+    create_emergency_contact(db, payload)
+    return {"message": "Emergency contact added successfully"}
+
+
+@router.get(
+    "/get-emergency-contacts/{elder_id}",
+    response_model=List[EmergencyContactResponse]
+)
+def list_emergency_contacts(
+    elder_id: int,
+    db: Session = Depends(get_db)
+):
+    contacts = get_emergency_contacts(db, elder_id)
+    return contacts

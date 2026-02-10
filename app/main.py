@@ -11,6 +11,8 @@ from app.core.exceptions import (
     generic_exception_handler
 )
 from app.api.v1.caregiver.createelder.routes import router as caregiver_create_elder
+from app.api.v1.caregiver.medication.routes import router as caregiver_medication
+
 # from app.api.v1.elder.auth.routes import router as elder_auth
 # from app.api.v1.caregiver.profile.routes import router as caregiver_profile
 # from app.api.v1.caretaker.auth.routes import router as caretaker_auth
@@ -33,6 +35,8 @@ app.include_router(caregiver_create_elder, prefix="/api/v1/caregiver", tags=["Ca
 
 
 app.include_router(caregiver_auth, prefix="/api/v1/caregiver", tags=["Caregiver"])
+
+app.include_router(caregiver_medication, prefix="/api/v1/caregiver", tags=["Medication"])
 # app.include_router(elder_auth, prefix="/api/v1/elder", tags=["Elder"])
 # app.include_router(caregiver_profile, prefix="/api/v1/caregiver", tags=["Caregiver"])
 # app.include_router(caretaker_auth, prefix="/api/v1/caretaker", tags=["Caretaker"])
@@ -41,8 +45,9 @@ app.include_router(caregiver_auth, prefix="/api/v1/caregiver", tags=["Caregiver"
 
 
 
-@app.get("/")
-def health_check():
+
+@app.get("/health")
+def health():
     return {"status": "ok"}
 
 # if __name__ == "__main__":
