@@ -16,7 +16,7 @@ def create_medication_api(
 ):
     try:
         medication_id = create_medication(db, data)
-
+    #insert data
         create_medication_schedules(
             db=db,
             medication_id=medication_id,

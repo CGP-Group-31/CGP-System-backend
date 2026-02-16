@@ -46,7 +46,7 @@ def create_relationship(
 
     return result.scalar()
 
-    #later hash data
+    #later hash data without ElderID, PreferredDoctorID
 def add_elder_records(db: Session, elder_id: int, data):
     query = text("""INSERT INTO ElderProfiles (ElderID, BloodType, Allergies, ChronicConditions,
             EmergencyNotes, PastSurgeries, PreferredDoctorID)

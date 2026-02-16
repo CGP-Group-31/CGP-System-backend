@@ -1,9 +1,9 @@
 
 from pydantic import BaseModel, EmailStr
 from datetime import date
-
+from typing import Optional
 from pydantic import BaseModel, Field, EmailStr
-
+# add fcm token with login and the signup
 class CaregiverCreate(BaseModel):
     full_name: str = Field(min_length=3, max_length=100)
     email: EmailStr
@@ -12,6 +12,9 @@ class CaregiverCreate(BaseModel):
     date_of_birth: date
     gender: str
     address: str
+    fcm_token: Optional[str] = None
+    app_type: str # 'elder_app', 'caregiver_app'
+    device_model: Optional[str] = None
 
 class CaregiverCreateResponse(BaseModel):
     user_id: int
@@ -21,7 +24,9 @@ class CaregiverCreateResponse(BaseModel):
 class CaregiverLogin(BaseModel):
     email: EmailStr
     password: str
-
+    fcm_token: Optional[str] = None
+    app_type: str
+    device_model: Optional[str] = None
 
 class CaregiverLoginResponse(BaseModel):
     user_id: int
