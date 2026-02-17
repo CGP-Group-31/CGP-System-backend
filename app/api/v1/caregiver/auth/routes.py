@@ -1,14 +1,13 @@
+# app/api/v1/caregiver/auth/routes.py
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import text
 from app.core.security import verify_password
 from app.core.database import get_db
-from sqlalchemy import text
-
 
 from .repository import create_caregiver, login_caregiver, upsert_user_device
-from .schemas import CaregiverCreate, CaregiverLogin
+from .schemas import CaregiverCreate, CaregiverLogin, CaregiverLoginResponse
 
 router = APIRouter(prefix="/auth", tags=["Caregiver Auth"])
 
@@ -17,18 +16,23 @@ def register_caregiver(data: CaregiverCreate, db: Session = Depends(get_db)):
     try:
         user_id = create_caregiver(db, data)
         db.commit()
-
         return {"user_id": user_id}
-
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/login")
-def login(data: CaregiverLogin, db: Session = Depends(get_db)):
-    user = login_caregiver(db, data.email)
 
-    if not user or not verify_password(data.password, user["PasswordHash"]):
+@router.post("/login", response_model=CaregiverLoginResponse)
+def login(data: CaregiverLogin, db: Session = Depends(get_db)):
+
+    login_data = login_caregiver(db, data.email)
+
+    if not login_data:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    user = login_data["user"]
+
+    if not verify_password(data.password, user["PasswordHash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     try:
@@ -36,6 +40,7 @@ def login(data: CaregiverLogin, db: Session = Depends(get_db)):
             text("""INSERT INTO UserLogins (UserID, RoleID, LoginTime) VALUES (:uid, :rid, GETDATE())"""),
             {"uid": user["UserID"], "rid": user["RoleID"]}
         )
+
         db.execute(
             text("""UPDATE Users SET LastLogin = GETDATE() WHERE UserID = :uid"""),
             {"uid": user["UserID"]}
@@ -65,5 +70,6 @@ def login(data: CaregiverLogin, db: Session = Depends(get_db)):
         "address": user["Address"],
         "date_of_birth": user["DateOfBirth"],
         "gender": user["Gender"],
-        "created_at": user["CreatedAt"]
+        "created_at": user["CreatedAt"],
+        "relationships": login_data["relationships"]
     }
