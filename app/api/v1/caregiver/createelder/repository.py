@@ -68,55 +68,68 @@ ROLE_DOCTOR = 2
 
 def all_doctors(db: Session):
     query = text("""SELECT d.DoctorID AS doctor_id, u.FullName AS full_name,
-            d.Specialization AS specialization,
-            d.Hospital AS hospital FROM Doctor d
+            d.Specialization AS specialization, d.Hospital AS hospital FROM Doctor d
         JOIN Users u ON u.UserID = d.DoctorID WHERE u.IsActive = 1 AND u.RoleID = :role_id""")
 
     result = db.execute(query, {"role_id": ROLE_DOCTOR})
     return result.mappings().all()
 
 
-# def unset_primary_contact(db: Session, elder_id: int):
-#     db.execute(
-#         text("""UPDATE EmergencyContacts SET IsPrimary = 0 WHERE ElderID = :elder_id"""),
-#         {"elder_id": elder_id}
-#     )
+CHECK_ELDER_EXISTS = text("""SELECT 1 FROM Users WHERE UserID = :elder_id AND IsActive = 1""")
 
-# not sure the is primry state will be changed, when add a new contact is thatis not primary, check
-# if the api returns the primary contact true only the UPDATE EmergencyContacts SET IsPrimary = 0
-# if not not want to add a promary contact 
+INSERT_CONTACT = text("""INSERT INTO EmergencyContacts (ElderID, ContactName, Phone, Relationship, IsPrimary)
+    OUTPUT INSERTED.ContactID
+    VALUES (:elder_id, :contact_name, :phone, :relationship, :is_primary)""")
+
+UNSET_PRIMARY = text("""UPDATE EmergencyContacts
+    SET IsPrimary = 0 WHERE ElderID = :elder_id AND IsPrimary = 1""")
+
+SELECT_CONTACTS = text("""SELECT ContactID AS contact_id, ElderID AS elder_id, ContactName AS contact_name, Phone AS phone,  Relationship AS relationship,
+        IsPrimary AS is_primary FROM EmergencyContacts WHERE ElderID = :elder_id
+    ORDER BY IsPrimary DESC, ContactID DESC""")
+
+
 def create_emergency_contact(db: Session, data):
-    if data.is_primary:
-        db.execute(text("""UPDATE EmergencyContacts SET IsPrimary = 0 WHERE ElderID = :elder_id"""),
-            {"elder_id": data.elder_id})
+    try:
+        exists = db.execute(CHECK_ELDER_EXISTS, {"elder_id": data.elder_id}).scalar()
+        if not exists:
+            return None, "Elder not found or inactive."
 
-    db.execute(
-        text("""INSERT INTO EmergencyContacts (ElderID, ContactName, Phone, Relationship, IsPrimary)
-            VALUES (:elder_id, :contact_name, :phone, :relationship, :is_primary)"""),
-        data.dict()
-    )
-    db.commit()
+        if data.is_primary:
+            db.execute(UNSET_PRIMARY, {"elder_id": data.elder_id})
 
+        result = db.execute(INSERT_CONTACT, {
+            "elder_id": data.elder_id,
+            "contact_name": data.contact_name.strip(),
+            "phone": data.phone.strip(),
+            "relationship": data.relationship.strip(),
+            "is_primary": 1 if data.is_primary else 0
+        })
 
+        contact_id = result.scalar()
+        db.commit()
+        return contact_id, None
+
+    except IntegrityError as e:
+        db.rollback()
+        return None, "Database integrity error. Check ElderID and constraints."
+
+    except SQLAlchemyError:
+        db.rollback()
+        return None, "Database error occurred while creating the emergency contact."
 
 def get_emergency_contacts(db: Session, elder_id: int):
-    result = db.execute(
-        text("""SELECT ContactID, ElderID, ContactName, Phone, Relationship, IsPrimary
-            FROM EmergencyContacts WHERE ElderID = :elder_id"""),
-        {"elder_id": elder_id}
-    )
-
-    return result.mappings().all()
-
+    try:
+        result = db.execute(SELECT_CONTACTS, {"elder_id": elder_id})
+        return result.mappings().all(), None
+    except SQLAlchemyError:
+        return None, "Database error occurred while fetching emergency contacts."
 
 def search_doctors(
     db: Session,
     doctor_name: Optional[str] = None,
-    hospital: Optional[str] = None
-):
-    query = """SELECT  d.DoctorID AS doctor_id, u.FullName AS full_name,
-            d.Specialization AS specialization, d.Hospital AS hospital
-        FROM Doctor d
+    hospital: Optional[str] = None):
+    query = """SELECT  d.DoctorID AS doctor_id, u.FullName AS full_name, d.Specialization AS specialization, d.Hospital AS hospital FROM Doctor d
         JOIN Users u ON u.UserID = d.DoctorID WHERE u.IsActive = 1 AND u.RoleID = :role_id """
 
     params = {"role_id": ROLE_DOCTOR}
