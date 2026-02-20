@@ -135,7 +135,6 @@ def search_doctors_api(
     db: Session = Depends(get_db)
 ):
 
-    # If both fields are empty
     if not data.doctor_name and not data.hospital:
         raise HTTPException(
             status_code=400,
