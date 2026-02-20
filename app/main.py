@@ -4,6 +4,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.exceptions import register_exception_handlers
 
 
+import firebase_admin
+from firebase_admin import credentials, messaging
+import os
+
+
 from app.api.v1.caregiver.auth.routes import router as caregiver_auth
 from app.core.exceptions import (
     http_exception_handler,
@@ -19,6 +24,17 @@ from app.api.v1.caregiver.medication.routes import router as caregiver_medicatio
 
 from app.api.v1.caregiver.caregiverProfile.routes import router as caregiver_profile
 from app.api.v1.caregiver.elderManage.routes import router as caregiver_elder_mgt
+
+cred = credentials.Certificate("serviceAccountKey.json")
+firebase_admin.initialize_app(cred)
+
+def send_push(token, title, body):
+    message = messaging.Message(
+        notification=messaging.Notification(title=title, body=body),
+        token=token,
+    )
+    messaging.send(message)
+
 
 
 

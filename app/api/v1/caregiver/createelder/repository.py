@@ -2,13 +2,12 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.core.security import hash_password, verify_password
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-
-
+from typing import Optional
+ROLE_DOCTOR =  2
 ROLE_ELDER = 5
 def create_elder(db: Session, data):
     query = text("""INSERT INTO Users (RoleID, FullName, Email, Phone, PasswordHash,
-            DateOfBirth, Gender, IsActive, CreatedAt, LastLogin, Address
-        )
+            DateOfBirth, Gender, IsActive, CreatedAt, LastLogin, Address)
         OUTPUT INSERTED.UserID
         VALUES (:role_id, :full_name, :email, :phone, :password,
             :dob, :gender, 1, GETDATE(), GETDATE(), :address)""")
@@ -46,7 +45,7 @@ def create_relationship(
 
     return result.scalar()
 
-    #later hash data
+    #later hash data without ElderID, PreferredDoctorID
 def add_elder_records(db: Session, elder_id: int, data):
     query = text("""INSERT INTO ElderProfiles (ElderID, BloodType, Allergies, ChronicConditions,
             EmergencyNotes, PastSurgeries, PreferredDoctorID)
@@ -84,6 +83,8 @@ def all_doctors(db: Session):
 #     )
 
 # not sure the is primry state will be changed, when add a new contact is thatis not primary, check
+# if the api returns the primary contact true only the UPDATE EmergencyContacts SET IsPrimary = 0
+# if not not want to add a promary contact 
 def create_emergency_contact(db: Session, data):
     if data.is_primary:
         db.execute(text("""UPDATE EmergencyContacts SET IsPrimary = 0 WHERE ElderID = :elder_id"""),
@@ -105,4 +106,28 @@ def get_emergency_contacts(db: Session, elder_id: int):
         {"elder_id": elder_id}
     )
 
+    return result.mappings().all()
+
+
+def search_doctors(
+    db: Session,
+    doctor_name: Optional[str] = None,
+    hospital: Optional[str] = None
+):
+    query = """SELECT  d.DoctorID AS doctor_id, u.FullName AS full_name,
+            d.Specialization AS specialization, d.Hospital AS hospital
+        FROM Doctor d
+        JOIN Users u ON u.UserID = d.DoctorID WHERE u.IsActive = 1 AND u.RoleID = :role_id """
+
+    params = {"role_id": ROLE_DOCTOR}
+
+    if doctor_name:
+        query += " AND u.FullName LIKE :doctor_name"
+        params["doctor_name"] = f"%{doctor_name}%"
+
+    if hospital:
+        query += " AND d.Hospital LIKE :hospital"
+        params["hospital"] = f"%{hospital}%"
+
+    result = db.execute(text(query), params)
     return result.mappings().all()

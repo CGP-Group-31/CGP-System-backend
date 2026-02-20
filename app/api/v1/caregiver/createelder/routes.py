@@ -8,8 +8,8 @@ from app.core.security import verify_password
 from app.core.database import get_db
 from .repository import create_elder, create_relationship, add_elder_records, all_doctors
 from .schemas import  ElderProfile , ElderRegisterRequest, ElderRegisterResponse,ElderProfileResponse, DoctorResponse
-from .schemas import EmergencyContactCreate, EmergencyContactResponse
-from .repository import create_emergency_contact, get_emergency_contacts
+from .schemas import EmergencyContactCreate, EmergencyContactResponse, DoctorSearchRequest, DoctorResponse
+from .repository import create_emergency_contact, get_emergency_contacts, search_doctors
 
 
 # ElderCreate, ElderCreateResponse, ElderRelationship, ElderRelationshipResponse,
@@ -126,3 +126,31 @@ def list_emergency_contacts(
 ):
     contacts = get_emergency_contacts(db, elder_id)
     return contacts
+
+@router.post("/search-doctors",
+             response_model=list[DoctorResponse],
+             status_code=status.HTTP_200_OK)
+def search_doctors_api(
+    data: DoctorSearchRequest,
+    db: Session = Depends(get_db)
+):
+
+    if not data.doctor_name and not data.hospital:
+        raise HTTPException(
+            status_code=400,
+            detail="Please provide doctor_name or hospital for searching"
+        )
+
+    doctors = search_doctors(
+        db,
+        doctor_name=data.doctor_name,
+        hospital=data.hospital
+    )
+
+    if not doctors:
+        raise HTTPException(
+            status_code=404,
+            detail="No doctors found"
+        )
+
+    return doctors

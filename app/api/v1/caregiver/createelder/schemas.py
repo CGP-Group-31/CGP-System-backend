@@ -86,3 +86,8 @@ class EmergencyContactResponse(BaseModel):
     class Config:
         populate_by_name = True
         from_attributes = True
+
+
+class DoctorSearchRequest(BaseModel):
+    doctor_name: Optional[str] = None
+    hospital: Optional[str] = None
