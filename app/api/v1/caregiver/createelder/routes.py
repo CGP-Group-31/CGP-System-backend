@@ -8,9 +8,8 @@ from app.core.security import verify_password
 from app.core.database import get_db
 from .repository import create_elder, create_relationship, add_elder_records, all_doctors
 from .schemas import  ElderProfile , ElderRegisterRequest, ElderRegisterResponse,ElderProfileResponse, DoctorResponse
-from .schemas import EmergencyContactCreate, EmergencyContactResponse, DoctorSearchRequest, DoctorResponse
+from .schemas import EmergencyContactCreate, EmergencyContactResponse, DoctorSearchRequest, DoctorResponse,  MessageResponse
 from .repository import create_emergency_contact, get_emergency_contacts, search_doctors
-
 
 # ElderCreate, ElderCreateResponse, ElderRelationship, ElderRelationshipResponse,
 router = APIRouter(prefix="/elder-create", tags=["Elder Create"])
@@ -106,51 +105,58 @@ def get_all_doctors(db: Session = Depends(get_db)):
 
     return doctors
 
-
-@router.post("/emergency-contacts", status_code=201)
+@router.post("/emergency-contacts",response_model=MessageResponse,
+             status_code=status.HTTP_201_CREATED)
 def add_emergency_contact(
     payload: EmergencyContactCreate,
     db: Session = Depends(get_db)
 ):
-    create_emergency_contact(db, payload)
-    return {"message": "Emergency contact added successfully"}
+    contact_id, err = create_emergency_contact(db, payload)
 
+    if err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err)
+
+    return {"message": f"Emergency contact added successfully"}
 
 @router.get(
     "/get-emergency-contacts/{elder_id}",
-    response_model=List[EmergencyContactResponse]
+    response_model=List[EmergencyContactResponse],
+    status_code=status.HTTP_200_OK
 )
 def list_emergency_contacts(
     elder_id: int,
     db: Session = Depends(get_db)
 ):
-    contacts = get_emergency_contacts(db, elder_id)
-    return contacts
+    if elder_id <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="elder_id must be greater than 0")
 
+    contacts, err = get_emergency_contacts(db, elder_id)
+
+    if err:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=err)
+    return contacts or []
 @router.post("/search-doctors",
              response_model=list[DoctorResponse],
              status_code=status.HTTP_200_OK)
 def search_doctors_api(
     data: DoctorSearchRequest,
-    db: Session = Depends(get_db)
-):
+    db: Session = Depends(get_db)):
 
     if not data.doctor_name and not data.hospital:
         raise HTTPException(
             status_code=400,
-            detail="Please provide doctor_name or hospital for searching"
-        )
+            detail="Please provide doctor_name or hospital for searching")
 
     doctors = search_doctors(
         db,
         doctor_name=data.doctor_name,
-        hospital=data.hospital
-    )
+        hospital=data.hospital)
 
     if not doctors:
         raise HTTPException(
             status_code=404,
-            detail="No doctors found"
-        )
+            detail="No doctors found")
 
     return doctors

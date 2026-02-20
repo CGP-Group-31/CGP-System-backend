@@ -2,8 +2,8 @@
 from pydantic import BaseModel, EmailStr
 from datetime import date
 from typing import Optional
-
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, field_validator, ConfigDict
+import re
 
 # class ElderCreate(BaseModel):
 #     full_name: str = Field(min_length=3, max_length=100)
@@ -66,23 +66,44 @@ class DoctorResponse(BaseModel):
     specialization: str
     hospital: str
 
+PHONE_REGEX = re.compile(r"^[0-9+\-\s]{8,12}$")
 
 class EmergencyContactCreate(BaseModel):
-    elder_id: int
-    contact_name: str = Field(max_length=100)
-    phone: str = Field(min_length=8, max_length=15)
-    relationship: Optional[str] = None
-    is_primary: bool = False
+    elder_id: int = Field(..., gt=0)
+    contact_name: str = Field(..., min_length=2, max_length=50)
+    phone: str = Field(..., min_length=8, max_length=12)
+    relationship: str = Field(..., min_length=2, max_length=50)
+    is_primary: bool = Field(default=False)
 
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str):
+        v = v.strip()
+        if not PHONE_REGEX.match(v):
+            raise ValueError("Invalid phone format. Use 8-12 digits")
+        return v
+
+    @field_validator("contact_name", "relationship")
+    @classmethod
+    def no_empty_strings(cls, v: str):
+        v = v.strip()
+        if not v:
+            raise ValueError("This field cannot be empty.")
+        return v
 
 class EmergencyContactResponse(BaseModel):
-    contact_id: int = Field(alias="ContactID")
-    elder_id: int = Field(alias="ElderID")
-    contact_name: Optional[str] = Field(alias="ContactName")
-    phone: str = Field(alias="Phone")
-    relationship: Optional[str] = Field(alias="Relationship")
-    is_primary: bool = Field(alias="IsPrimary")
+    model_config = ConfigDict(populate_by_name=True)
 
+    contact_id: int
+    elder_id: int
+    contact_name: str
+    phone: str
+    relationship: str
+    is_primary: bool
+
+
+class MessageResponse(BaseModel):
+    message: str
     class Config:
         populate_by_name = True
         from_attributes = True
