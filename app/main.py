@@ -18,12 +18,14 @@ from app.core.exceptions import (
 from app.api.v1.caregiver.createelder.routes import router as caregiver_create_elder
 from app.api.v1.caregiver.medication.routes import router as caregiver_medication
 
-# from app.api.v1.elder.auth.routes import router as elder_auth
+from app.api.v1.elder.auth.routes import router as elder_auth
 # from app.api.v1.caregiver.profile.routes import router as caregiver_profile
 # from app.api.v1.caretaker.auth.routes import router as caretaker_auth
 
 from app.api.v1.caregiver.caregiverProfile.routes import router as caregiver_profile
 from app.api.v1.caregiver.elderManage.routes import router as caregiver_elder_mgt
+from app.api.v1.caregiver.appointments.routes import router as caregiver_appointment_mgt
+from app.api.v1.caregiver.vital.routes import router as caregiver_vital_mgt
 
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
@@ -52,9 +54,11 @@ app.include_router(caregiver_auth, prefix="/api/v1/caregiver")
 app.include_router(caregiver_profile, prefix="/api/v1/caregiver")
 app.include_router(caregiver_elder_mgt, prefix="/api/v1/caregiver")
 app.include_router(caregiver_medication, prefix="/api/v1/caregiver")
+app.include_router(caregiver_appointment_mgt, prefix="/api/v1/caregiver")
+app.include_router(caregiver_vital_mgt, prefix="/api/v1/caregiver")
 
 #elder routes
-# app.include_router(elder_auth, prefix="/api/v1/elder", tags=["Elder"])
+app.include_router(elder_auth, prefix="/api/v1/elder")
 # app.include_router(caregiver_profile, prefix="/api/v1/caregiver", tags=["Caregiver"])
 # app.include_router(caretaker_auth, prefix="/api/v1/caretaker", tags=["Caretaker"])
 
