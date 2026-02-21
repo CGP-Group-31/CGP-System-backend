@@ -7,11 +7,10 @@ from typing import List
 from app.core.security import verify_password
 from app.core.database import get_db
 from .repository import create_elder, create_relationship, add_elder_records, all_doctors
-from .schemas import  ElderProfile , ElderRegisterRequest, ElderRegisterResponse,ElderProfileResponse, DoctorResponse
+from .schemas import  ElderProfile , ElderRegisterRequest, ElderRegisterResponse,ElderProfileResponse, ElderProfileUpdate
 from .schemas import EmergencyContactCreate, EmergencyContactResponse, DoctorSearchRequest, DoctorResponse,  MessageResponse
-from .repository import create_emergency_contact, get_emergency_contacts, search_doctors
+from .repository import create_emergency_contact, get_emergency_contacts, search_doctors, update_elder_profile
 
-# ElderCreate, ElderCreateResponse, ElderRelationship, ElderRelationshipResponse,
 router = APIRouter(prefix="/elder-create", tags=["Elder Create"])
 
 # @router.post("/register", response_model=ElderCreateResponse, status_code=status.HTTP_201_CREATED)
@@ -72,26 +71,17 @@ def register_elder(
             detail="Failed to register elder"
         )
 
-@router.post(
-    "/elder-profile",
-    response_model=ElderProfileResponse,
-    status_code=status.HTTP_201_CREATED
-)
+@router.post("/elder-profile",
+    response_model=ElderProfileResponse,status_code=status.HTTP_201_CREATED)
 def add_elder_profile(
     data: ElderProfile,
-    db: Session = Depends(get_db)
-):
-    try:
-        profile_id = add_elder_records(db, data.elder_id, data)
-        db.commit()
-        return {"profile_id": profile_id}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail="Failed to create elder profile"
-        )
+    db: Session = Depends(get_db)):
+    profile_id, error = add_elder_records(db, data.elder_id, data)
 
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    db.commit()
+    return {"profile_id": profile_id}
 
 @router.get("/all-doctors",response_model=list[DoctorResponse], status_code=status.HTTP_200_OK)
 def get_all_doctors(db: Session = Depends(get_db)):
@@ -160,3 +150,14 @@ def search_doctors_api(
             detail="No doctors found")
 
     return doctors
+@router.put("/elder-profile-update/{elder_id}",status_code=200)
+def update_elder_profile_api(
+    elder_id: int,
+    payload: ElderProfileUpdate,
+    db: Session = Depends(get_db)):
+    success, error = update_elder_profile(db, elder_id, payload)
+
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    return {"message": "Elder profile updated successfully"}

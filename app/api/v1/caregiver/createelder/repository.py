@@ -1,6 +1,8 @@
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from .schemas import ElderProfile
 from app.core.security import hash_password, verify_password
+from app.core.encryption import encrypt_text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from typing import Optional
 ROLE_DOCTOR =  2
@@ -45,24 +47,45 @@ def create_relationship(
 
     return result.scalar()
 
-    #later hash data without ElderID, PreferredDoctorID
 def add_elder_records(db: Session, elder_id: int, data):
-    query = text("""INSERT INTO ElderProfiles (ElderID, BloodType, Allergies, ChronicConditions,
-            EmergencyNotes, PastSurgeries, PreferredDoctorID)
-        OUTPUT INSERTED.ElderProfileID
-        VALUES (:elder_id, :blood_type, :allergies, :chronic_conditions, :emergency_notes, :past_surgeries, :preferred_doctor_id)""")
+    elder_exists = db.execute(
+        text("SELECT 1 FROM Users WHERE UserID = :elder_id"),
+        {"elder_id": elder_id}
+    ).scalar()
 
-    result = db.execute(query, {
-        "elder_id": elder_id,
-        "blood_type": data.blood_type,
-        "allergies": data.allergies,
-        "chronic_conditions": data.chronic_conditions,
-        "emergency_notes": data.emergency_notes,
-        "past_surgeries": data.past_surgeries,
-        "preferred_doctor_id": data.preferred_doctor_id
-    })
+    if not elder_exists:
+        return None, "Elder does not exist."
 
-    return result.scalar()
+    profile_exists = db.execute(
+        text("SELECT 1 FROM ElderProfiles WHERE ElderID = :elder_id"),
+        {"elder_id": elder_id}
+    ).scalar()
+
+    if profile_exists:
+        return None, "Profile already exists for this elder."
+
+    try:
+        result = db.execute(
+            text("""INSERT INTO ElderProfiles (ElderID, BloodType, Allergies,ChronicConditions, EmergencyNotes,
+                    Pastsurgeries, PreferredDoctorID)
+                OUTPUT INSERTED.ElderID
+                VALUES (:elder_id, :blood_type, :allergies,:chronic_conditions, :emergency_notes,:past_surgeries, :preferred_doctor_id)"""),
+            {
+                "elder_id": elder_id,
+                "blood_type": data.blood_type,
+                "allergies": encrypt_text(data.allergies),
+                "chronic_conditions": encrypt_text(data.chronic_conditions),
+                "emergency_notes": encrypt_text(data.emergency_notes),
+                "past_surgeries": encrypt_text(data.past_surgeries),
+                "preferred_doctor_id": data.preferred_doctor_id
+            }
+        )
+        return result.scalar(), None
+    except IntegrityError:
+        return None, "Invalid doctor ID or foreign key constraint failed."
+
+    except SQLAlchemyError:
+        return None, "Database error occurred."
 
 ROLE_DOCTOR = 2  
 
@@ -144,3 +167,55 @@ def search_doctors(
 
     result = db.execute(text(query), params)
     return result.mappings().all()
+
+
+# encripted data
+def update_elder_profile(db: Session, elder_id: int, data):
+
+    exists = db.execute(
+        text("SELECT 1 FROM ElderProfiles WHERE ElderID = :elder_id"),
+        {"elder_id": elder_id}
+    ).scalar()
+
+    if not exists:
+        return None, "Elder profile not found."
+
+    update_fields = []
+    params = {"elder_id": elder_id}
+    if data.blood_type is not None:
+        update_fields.append("BloodType = :blood_type")
+        params["blood_type"] = data.blood_type
+
+    if data.allergies is not None:
+        update_fields.append("Allergies = :allergies")
+        params["allergies"] = encrypt_text(data.allergies)
+
+    if data.chronic_conditions is not None:
+        update_fields.append("ChronicConditions = :chronic_conditions")
+        params["chronic_conditions"] = encrypt_text(data.chronic_conditions)
+
+    if data.emergency_notes is not None:
+        update_fields.append("EmergencyNotes = :emergency_notes")
+        params["emergency_notes"] = encrypt_text(data.emergency_notes)
+
+    if data.past_surgeries is not None:
+        update_fields.append("Pastsurgeries = :past_surgeries")
+        params["past_surgeries"] = encrypt_text(data.past_surgeries)
+
+    if data.preferred_doctor_id is not None:
+        update_fields.append("PreferredDoctorID = :preferred_doctor_id")
+        params["preferred_doctor_id"] = data.preferred_doctor_id
+
+    if not update_fields:
+        return None, "No fields provided to update."
+
+    query = f"""UPDATE ElderProfiles SET {', '.join(update_fields)} WHERE ElderID = :elder_id"""
+
+    try:
+        db.execute(text(query), params)
+        db.commit()
+        return True, None
+
+    except SQLAlchemyError:
+        db.rollback()
+        return None, "Database error occurred while updating profile."
