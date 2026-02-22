@@ -3,15 +3,14 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from sqlalchemy.exc import SQLAlchemyError
 
-def create_appointment(db: Session, data: dict):
-
-    try:
+def create_appointment(db: Session, data):
         query= text("""
                 INSERT INTO Appointments(ElderID, DoctorName, Title, Location, Notes, AppointmentDate, AppointmentTime, RecordedAt)
                 VALUES(:elder_id, :doctor_name, :title, :location, :notes, :appointment_date, :appointment_time, GETDATE())
     """)
         
-        db.execute(query, {
+        try:
+            result = db.execute(query, {
             "elder_id" : data.elder_id,
             "doctor_name" : data.doctor_name,
             "title" : data.title,
@@ -19,14 +18,14 @@ def create_appointment(db: Session, data: dict):
             "notes" : data.notes,
             "appointment_date" : data.appointment_date,
             "appointment_time" : data.appointment_time
-        })
-        db.commit()
-    
-    
-    except SQLAlchemyError:
-        db.rollback()
-        raise
+            })
 
+            return result.rowcount >0
+        
+        except SQLAlchemyError as e:
+            db.rollback()
+            raise RuntimeError("DB error while creating appointmnet") from e
+    
 
 
 def get_all_appointments(db: Session, elder_id: int):
@@ -34,17 +33,20 @@ def get_all_appointments(db: Session, elder_id: int):
                 SELECT AppointmentID, ElderID, DoctorName, Title, Location, Notes, AppointmentDate, AppointmentTime FROM Appointments WHERE ElderID = :elder_id 
                 ORDER BY AppointmentDate, AppointmentTime
                  """)
-    result = db.execute(query, {"elder_id": elder_id})
-    return result.mappings().all()
-
+    try:
+        return db.execute(query, {"elder_id": elder_id}).mappings().all()
+    except SQLAlchemyError as e:
+        raise RuntimeError("DB error while fetching appointments") from e
 
 
 def get_one_appointment(db: Session, appointment_id: int):
     query = text("""
                 SELECT AppointmentID, ElderID, DoctorName, Title, Location, Notes, AppointmentDate, AppointmentTime FROM Appointments WHERE AppointmentID = :appointment_id 
                  """)
-    result = db.execute(query, {"appointment_id": appointment_id})
-    return result.mappings().first()
+    try:
+        return db.execute(query, {"appointment_id": appointment_id}).mappings().first()
+    except SQLAlchemyError as e:
+        raise RuntimeError("DB error while fetching an appointment") from e
 
 
 
@@ -53,74 +55,51 @@ def update_appointment(db: Session, appointment_id: int, data: dict):
     query_part=[]
 
 
-    if "doctor_name" in data:
+    if "doctor_name" is not None:
         query_part.append("DoctorName= :doctor_name")
-        update_field["doctor_name"] = data["doctor_name"]
+        update_field["doctor_name"] = data.doctor_name
 
-    if "title" in data:
+    if "title" is not None:
         query_part.append("Title= :title")
-        update_field["title"] = data["title"]
+        update_field["title"] = data.title
 
-    if "location" in data:
+    if "location" is not None:
         query_part.append("Location= :location")
-        update_field["location"] = data["location"]
+        update_field["location"] = data.location
 
-    if "appointment_date" in data:
+    if "appointment_date" is not None:
         query_part.append("AppointmentDate= :appointment_date")
-        update_field["appointment_date"] = data["appointment_date"]
+        update_field["appointment_date"] = data.appointment_date
 
-    if "appointment_time" in data:
+    if "appointment_time" is not None:
         query_part.append("AppointmentTime= :appointment_time")
-        update_field["appointment_time"] = data["appointment_time"]
-
-    if "location" in data:
-        query_part.append("Location= :location")
-        update_field["location"] = data["location"]
+        update_field["appointment_time"] = data.appointment_time
 
     if not query_part:
-        return False
+        return "no_fields"
 
     update_field["appointment_id"]= appointment_id
 
-    try:
-
-        query = f"""
+    query = text(f"""
                 UPDATE Appointments SET {', '.join(query_part)} 
                 WHERE AppointmentID= :appointment_id 
-                """
+                """)
+    try:
         
-        result = db.execute(text(query), update_field)
-
-        if result.rowcount == 0:
-            db.rollback()
-            return False
-        
-        db.commit()
-        return True
-
-    except SQLAlchemyError:
-        db.rollback()
-        raise
+        result = db.execute(query, update_field)
+        return "updated" if result.rowcount >0 else "not_found"
+    except SQLAlchemyError as e:
+        raise RuntimeError("DB error while updating appointments") from e
 
 
 
 def delete_appointment(db: Session, appointment_id: int):
-
-    try:
-        result = db.execute(
-            text("""
+        query =text("""
                 DELETE FROM Appointments WHERE AppointmentID= :appointment_id
-            """),
-            {"appointment_id": appointment_id}
-        )
-
-        if result.rowcount == 0:
-            db.rollback()
-            return False
+            """)
+        try:
+            result = db.execute(query,{"appointment_id": appointment_id})
+            return result.rowcount>0
+        except SQLAlchemyError as e:
+            raise RuntimeError("DB error while deleting appointment") from e
         
-        db.commit()
-        return True
-    
-    except SQLAlchemyError:
-        db.rollback()
-        raise

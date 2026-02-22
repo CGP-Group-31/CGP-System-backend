@@ -1,37 +1,63 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Optional
 from datetime import date, time, datetime
+import re
+
+NAME_REGEX = re.compile(r"^[A-Za-z][A-Za-z\s\.\-']{1,99}")
 
 class AppointmentCreate(BaseModel):
-    elder_id: int
-    doctor_name: str
-    title: str
-    location: str
-    notes: Optional[str] = None
+    elder_id: int = Field(...,gt=0)
+    doctor_name: str = Field(..., min_length=3, max_length=100)
+    title: str = Field(..., min_length=2, max_length=100)
+    location: str = Field(..., min_length=2, max_length=100)
+    notes: Optional[str] = Field(None, min_length=2, max_length=100)
     appointment_date: date
     appointment_time: time  #24 format?
 
+    @field_validator("doctor_name")
+    @classmethod 
+    def validate_doctor_name(cls, v:str):
+        v = v.strip()
+        if not NAME_REGEX.match(v):
+            raise ValueError("Invalid doctor name")
+        return v
 
+    @field_validator("appointment_date")
+    @classmethod 
+    def validate_date_not_in_past(cls, v:date):
+        if v<date.today():
+            raise ValueError("Appontments can not be in the past")
+        return v
 
 class AppointmentResponse(BaseModel):
-    ElderID: int
-    DoctorName: str
-    Title: str
-    Location: str
-    Notes: Optional[str] = None
-    AppointmentDate: date
-    AppointmentTime: time  #24 format?
+    model_config = ConfigDict(populate_by_name=True)
+
+    elder_id: int = Field(alias="ElderID")
+    doctor_name: str = Field(alias="DoctorName")
+    title: str = Field(alias="Title")
+    location: str = Field(alias="Location")
+    notes:str = Field(alias="Notes")
+    appointment_date: date = Field(alias="AppointmentDate")
+    appointment_time: time = Field(alias="AppointmentTime")  #24 format?
     
 
 
 class AppointmentUpdate(BaseModel):
-    doctor_name: Optional[str]=None
-    title: Optional[str] = None
-    location: Optional[str]= None
-    notes: Optional[str] = None
+    doctor_name: str  = Field(None, min_length=2, max_length=100)
+    title: str = Field(None, min_length=2, max_length=100)
+    location: str = Field(None, min_length=2, max_length=100)
+    notes: str = Field(None, min_length=2, max_length=100)
     appointment_date: Optional[date] = None
     appointment_time: Optional[time] = None  #24 format?
-    recorded_at:  Optional[datetime] = None
 
+    @field_validator("doctor_name")
+    @classmethod 
+    def validate_doctor_name(cls, v:str):
+        if v is None:
+            return v
+        v = v.strip()
+        if not NAME_REGEX.match(v):
+            raise ValueError("Invalid doctor name")
+        return v
 
 
