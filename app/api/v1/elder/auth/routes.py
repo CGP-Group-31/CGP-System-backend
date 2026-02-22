@@ -1,26 +1,54 @@
-import logging
-from sqlalchemy.exc import SQLAlchemyError
-from fastapi import APIRouter, Depends, HTTPException, status
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordRequestForm
 from app.core.security import verify_password
 from app.core.database import get_db
-from .repository import login_elder
+from .repository import login_elder, upsert_user_device
 from .schemas import  ElderLogin, ElderLoginResponse
-# ElderCreate, ElderCreateResponse, ElderRelationship, ElderRelationshipResponse,
+
+from sqlalchemy import text
+
 router = APIRouter(prefix="/elder", tags=["Elder login"])
 
-# not sure / work /not tested, not add to mainpy, every new folder route need to add the main.py
-@router.post("/login")
-def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@router.post("/login", response_model=ElderLoginResponse)
+def login(data: ElderLogin, db: Session = Depends(get_db)):
 
-    user = login_elder(db, data.username)
+    login = login_elder(db, data.email)
 
-    if not user:
+    if not login:
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    user = login["user"]
 
     if not verify_password(data.password, user["PasswordHash"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise HTTPException(status_code=401, detail="Invalid email or password. Try again")
+
+    try:
+        db.execute(
+            text("""INSERT INTO UserLogins (UserID, RoleID, LoginTime) VALUES (:uid, :rid, GETDATE())"""),
+            {"uid": user["UserID"], "rid": user["RoleID"]}
+        )
+
+        db.execute(
+            text("""UPDATE Users SET LastLogin = GETDATE() WHERE UserID = :uid"""),
+            {"uid": user["UserID"]}
+        )
+
+        if data.fcm_token:
+            upsert_user_device(
+                db,
+                user["UserID"],
+                data.fcm_token,
+                data.app_type,
+                data.device_model
+            )
+
+        db.commit()
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    
     return {
         "user_id": user["UserID"],
         "full_name": user["FullName"],
