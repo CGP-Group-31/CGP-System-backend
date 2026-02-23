@@ -27,6 +27,7 @@ from app.api.v1.caregiver.elderManage.routes import router as caregiver_elder_mg
 from app.api.v1.caregiver.appointments.routes import router as caregiver_appointment_mgt
 from app.api.v1.caregiver.vital.routes import router as caregiver_vital_mgt
 import app.modules.notifications.router
+from app.core.scheduler import start_scheduler
 
 
 
@@ -36,7 +37,10 @@ app = FastAPI(
     title="Elder Care Backend",
     version="1.0.0"
 )
-
+@app.on_event("startup")
+def on_startup():
+    start_scheduler()
+    
 register_exception_handlers(app)
 
 #caregiver routes

@@ -51,6 +51,7 @@ def login(data: ElderLogin, db: Session = Depends(get_db)):
     
     return {
         "user_id": user["UserID"],
+        "role_id": user["RoleID"], 
         "full_name": user["FullName"],
         "email": user["Email"],
         "phone": user["Phone"],
