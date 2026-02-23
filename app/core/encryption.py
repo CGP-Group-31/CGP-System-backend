@@ -1,14 +1,12 @@
-from cryptography.fernet import Fernet
-import os
+# app/core/encryption.py
 
-SECRET_KEY = os.getenv("ENCRYPTION_KEY")
+from cryptography.fernet import Fernet, InvalidToken
+from app.core.config import settings
 
-if not SECRET_KEY:
- 
-    SECRET_KEY = Fernet.generate_key().decode()
-    
-
-fernet = Fernet(SECRET_KEY.encode())
+try:
+    fernet = Fernet(settings.encryption_key.encode())
+except Exception:
+    raise RuntimeError("Invalid ENCRYPTION_KEY format.")
 
 
 def encrypt_text(value: str | None) -> str | None:
@@ -20,4 +18,7 @@ def encrypt_text(value: str | None) -> str | None:
 def decrypt_text(value: str | None) -> str | None:
     if not value:
         return None
-    return fernet.decrypt(value.encode()).decode()
+    try:
+        return fernet.decrypt(value.encode()).decode()
+    except InvalidToken:
+        raise RuntimeError("Invalid encryption token.")
