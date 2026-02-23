@@ -3,9 +3,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.exceptions import register_exception_handlers
 
+from contextlib import asynccontextmanager
 
-import firebase_admin
-from firebase_admin import credentials, messaging
+
 import os
 
 
@@ -26,26 +26,21 @@ from app.api.v1.caregiver.caregiverProfile.routes import router as caregiver_pro
 from app.api.v1.caregiver.elderManage.routes import router as caregiver_elder_mgt
 from app.api.v1.caregiver.appointments.routes import router as caregiver_appointment_mgt
 from app.api.v1.caregiver.vital.routes import router as caregiver_vital_mgt
-
-cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
-
-def send_push(token, title, body):
-    message = messaging.Message(
-        notification=messaging.Notification(title=title, body=body),
-        token=token,
-    )
-    messaging.send(message)
+import app.modules.notifications.router
+from app.core.scheduler import start_scheduler
 
 
 
-
+from app.modules.notifications.router import router as notifications_router
 
 app = FastAPI(
     title="Elder Care Backend",
     version="1.0.0"
 )
-
+@app.on_event("startup")
+def on_startup():
+    start_scheduler()
+    
 register_exception_handlers(app)
 
 #caregiver routes
@@ -64,6 +59,7 @@ app.include_router(elder_auth, prefix="/api/v1/elder")
 
 
 
+app.include_router(notifications_router, prefix="/api/v1")
 
 
 

@@ -5,29 +5,6 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 import re
 
-# class ElderCreate(BaseModel):
-#     full_name: str = Field(min_length=3, max_length=100)
-#     email: EmailStr
-#     phone: str = Field(min_length=10, max_length=15)
-#     password: str = Field(min_length=6, max_length=72)
-#     date_of_birth: date
-#     gender: str
-#     address: str
-
-# class ElderCreateResponse(BaseModel):
-#     user_id: int
-
-
-# class ElderRelationship(BaseModel):
-    
-#     elderID : int
-#     caregiverTD : int
-#     RelationshipType : str
-#     IsPrimary : bool
-
-# class ElderRelationshipResponse(BaseModel):
-#     relationship_id: int
-
 class ElderRegisterRequest(BaseModel):
     # elder fields
     full_name: str
@@ -47,18 +24,26 @@ class ElderRegisterResponse(BaseModel):
     user_id: int
     relationship_id: int
 
-class ElderProfile(BaseModel):
-    elder_id: int
-    blood_etype: str
-    allergies: str
-    chronic_conditions: str
-    emergency_notes: str
-    past_surgeries: str
-    preferred_doctor_id: int
 
+class ElderProfile(BaseModel):
+    elder_id: int = Field(...)
+    blood_type: str = Field(..., min_length=1, max_length=4)
+    allergies: Optional[str] = None
+    chronic_conditions: Optional[str] = None
+    emergency_notes: Optional[str] = None
+    past_surgeries: Optional[str] = None
+    preferred_doctor_id: Optional[int] = None
 
 class ElderProfileResponse(BaseModel):
     profile_id: int
+# save in the session
+class ElderProfileUpdate(BaseModel):
+    blood_type: Optional[str] = Field(None, max_length=5)
+    allergies: Optional[str] = None
+    chronic_conditions: Optional[str] = None
+    emergency_notes: Optional[str] = None
+    past_surgeries: Optional[str] = None
+    preferred_doctor_id: Optional[int] = None
 
 class DoctorResponse(BaseModel):
     doctor_id: int
