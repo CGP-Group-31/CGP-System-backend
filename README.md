@@ -16,6 +16,7 @@ Built with **FastAPI**, **MSSQL**, **SQLAlchemy Core**, and **Firebase Cloud Mes
     </td>
   </tr>
 </table>
+
 ---
 
 # Tech Stack
