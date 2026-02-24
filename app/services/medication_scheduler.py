@@ -4,19 +4,26 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.services.fcm_service import send_medication_push
 from zoneinfo import ZoneInfo
+
+TZ = ZoneInfo("Asia/Colombo")
+
+
 def is_due_today(repeat_days: str, start_date: date, today: date) -> bool:
     repeat_days = (repeat_days or "").strip()
+
     if repeat_days == "Daily":
         return True
+
     if repeat_days == "EveryOtherDay":
         return (today - start_date).days % 2 == 0
-    allowed = {d.strip() for d in repeat_days.split(",") if d.strip()}
-    return today.strftime("%a") in allowed  # Mon Tue Wed...
 
+    allowed = {d.strip() for d in repeat_days.split(",") if d.strip()}
+    return today.strftime("%a") in allowed
+
+
+#  Then define the scheduler
 def run_due_medication_reminders(db: Session):
-    # now = datetime.now()
-    # today = now.date()
-    now = datetime.now(ZoneInfo("Asia/Colombo"))
+    now = datetime.now(TZ)
     today = now.date()
 
     q = text("""SELECT
@@ -30,11 +37,8 @@ def run_due_medication_reminders(db: Session):
             ms.StartDate,
             ms.EndDate,
             ud.FCMToken
-        FROM MedicationSchedules ms
-        JOIN Medications m ON m.MedicationID = ms.MedicationID
-        LEFT JOIN UserDevices ud
-            ON ud.UserID = m.ElderID AND ud.app_type = 'elder'
-        WHERE ms.IsActive = 1 AND m.IsActive = 1""")
+        FROM MedicationSchedules ms JOIN Medications m ON m.MedicationID = ms.MedicationID
+        LEFT JOIN UserDevices ud ON ud.UserID = m.ElderID AND ud.app_type = 'elder' WHERE ms.IsActive = 1 AND m.IsActive = 1""")
 
     rows = db.execute(q).fetchall()
 
@@ -42,47 +46,46 @@ def run_due_medication_reminders(db: Session):
         if not r.FCMToken:
             continue
 
-        # date range
         if today < r.StartDate:
             continue
-        if r.EndDate is not None and today > r.EndDate:
+        if r.EndDate and today > r.EndDate:
             continue
 
-        # repeat
         if not is_due_today(r.RepeatDays, r.StartDate, today):
             continue
 
-        # time match
         tod = r.TimeOfDay
         if tod.hour != now.hour or tod.minute != now.minute:
             continue
 
-        scheduled_for = datetime.combine(today, dtime(tod.hour, tod.minute))
+        scheduled_for = datetime(
+            today.year, today.month, today.day,
+            tod.hour, tod.minute,
+            tzinfo=TZ
+        )
 
-        # guard: already inserted for this exact scheduled_for?
         exists = db.execute(text("""SELECT 1 FROM MedicationAdherence
-            WHERE ScheduleID = :sid AND ElderID = :eid AND ScheduledFor = :sf
-        """), {"sid": r.ScheduleID, "eid": r.ElderID, "sf": scheduled_for}).fetchone()
+            WHERE ScheduleID = :sid AND ElderID = :eid AND ScheduledFor = :sf"""), {"sid": r.ScheduleID, "eid": r.ElderID, "sf": scheduled_for}).fetchone()
 
         if exists:
             continue
 
-        # insert pending
         db.execute(text("""INSERT INTO MedicationAdherence (ScheduleID, ElderID, StatusID, ScheduledFor)
             VALUES (:sid, :eid, 1, :sf)"""), {"sid": r.ScheduleID, "eid": r.ElderID, "sf": scheduled_for})
 
-        title = "Medicine Reminder"
-        body = f"{r.MedicationName}\nDosage: {r.Dosage or '-'}\n{r.Instructions or ''}".strip()
-
         send_medication_push(
             token=r.FCMToken,
-            title=title,
-            body=body,
+            title="Medicine Reminder",
+            body=f"{r.MedicationName}",
             data={
                 "type": "MED_REMINDER",
                 "scheduleId": r.ScheduleID,
                 "elderId": r.ElderID,
-                "scheduledFor": scheduled_for.isoformat()
+                "scheduledFor": scheduled_for.isoformat(),
+                "medicationName": r.MedicationName,
+                "dosage": r.Dosage or "",
+                "instructions": r.Instructions or "",
+                "durationSec": 60,
             }
         )
 

@@ -11,26 +11,29 @@ if not firebase_admin._apps:
 
 
 def send_medication_push(token: str, title: str, body: str, data: dict | None = None):
-    """
-    High priority Android push.
-    Channel id 'med_reminders' must exist in the elder app.
-    """
+    # payload = {k: str(v) for k, v in (data or {}).items()}
+    payload = {}
+
+    if data:
+        for key, value in data.items():
+            payload[key] = str(value)
+
+        # Take the dictionary.
+        # If it exists, convert all values to text.
+        # If it doesn't exist, use empty dictionary.
+
+    payload["title"] = title
+    payload["body"] = body
+
     message = messaging.Message(
-        notification=messaging.Notification(title=title, body=body),
-        data={k: str(v) for k, v in (data or {}).items()},
+        data=payload,  #  data-only for reliable app handling
         android=messaging.AndroidConfig(
             priority="high",
-            notification=messaging.AndroidNotification(
-                channel_id="med_reminders",
-                sound="default",
-                default_vibrate_timings=True,
-            ),
         ),
         token=token,
     )
     return messaging.send(message)
 
 
-# ✅ Backward-compatible name (so your notifications router keeps working)
 def send_push_notification(token: str, title: str, body: str, data: dict | None = None):
     return send_medication_push(token=token, title=title, body=body, data=data)

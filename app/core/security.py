@@ -17,9 +17,7 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verify plain password against bcrypt hash
-    """
+
     if isinstance(plain_password, str):
         plain_password = plain_password.encode("utf-8")
 
