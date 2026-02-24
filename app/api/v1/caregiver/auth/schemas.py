@@ -44,5 +44,5 @@ class CaregiverLoginResponse(BaseModel):
     address: str
     date_of_birth: date
     gender: str
-    created_at: datetime   # ✅ FIXED
+    created_at: datetime  
     relationships: List[RelationshipResponse]
