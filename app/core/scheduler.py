@@ -8,10 +8,10 @@ scheduler = BackgroundScheduler(timezone="Asia/Colombo")
 
 
 def start_scheduler():
-    # Run every minute
+    
     scheduler.add_job(
         func=_medication_job,
-        trigger=IntervalTrigger(minutes=1),
+        trigger=IntervalTrigger(minutes=5),
         id="medication_reminders",
         replace_existing=True,
         max_instances=1,
