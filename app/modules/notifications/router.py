@@ -11,7 +11,7 @@ router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 @router.post("/test/{user_id}")
 def test_notification(user_id: int, db: Session = Depends(get_db)):
-    # 1) Try UserDevices table (recommended design)
+   
     q1 = text("SELECT FCMToken FROM UserDevices WHERE UserID = :uid")
     row = db.execute(q1, {"uid": user_id}).fetchone()
 
@@ -25,7 +25,7 @@ def test_notification(user_id: int, db: Session = Depends(get_db)):
     msg_id = send_push_notification(
         token=token,
         title="FCM Test",
-        body="Backend → Firebase → Device is working",
+        body="HI, This is a test notification",
         data={"type": "test"}
     )
 

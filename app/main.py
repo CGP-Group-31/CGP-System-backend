@@ -29,7 +29,7 @@ from app.api.v1.caregiver.vital.routes import router as caregiver_vital_mgt
 import app.modules.notifications.router
 from app.core.scheduler import start_scheduler
 
-
+from app.api.v1.elder.medication_adherence.routes import router as elder_medication
 
 from app.modules.notifications.router import router as notifications_router
 
@@ -61,6 +61,7 @@ app.include_router(elder_auth, prefix="/api/v1/elder")
 
 app.include_router(notifications_router, prefix="/api/v1")
 
+app.include_router(elder_medication, prefix="/api/v1/elder")
 
 
 @app.get("/health")
