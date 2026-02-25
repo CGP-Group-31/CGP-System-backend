@@ -50,28 +50,28 @@ def get_one_appointment(db: Session, appointment_id: int):
 
 
 
-def update_appointment(db: Session, appointment_id: int, data: dict):
+def update_appointment(db: Session, appointment_id: int, data):
     update_field ={}
     query_part=[]
 
 
-    if "doctor_name" is not None:
+    if data.doctor_name is not None:
         query_part.append("DoctorName= :doctor_name")
         update_field["doctor_name"] = data.doctor_name
 
-    if "title" is not None:
+    if data.title is not None:
         query_part.append("Title= :title")
         update_field["title"] = data.title
 
-    if "location" is not None:
+    if data.location is not None:
         query_part.append("Location= :location")
         update_field["location"] = data.location
 
-    if "appointment_date" is not None:
+    if data.appointment_date is not None:
         query_part.append("AppointmentDate= :appointment_date")
         update_field["appointment_date"] = data.appointment_date
 
-    if "appointment_time" is not None:
+    if data.appointment_time is not None:
         query_part.append("AppointmentTime= :appointment_time")
         update_field["appointment_time"] = data.appointment_time
 
@@ -102,4 +102,16 @@ def delete_appointment(db: Session, appointment_id: int):
             return result.rowcount>0
         except SQLAlchemyError as e:
             raise RuntimeError("DB error while deleting appointment") from e
+        
+
+def upcoming_appointments(db: Session, elder_id: int):
+    query = text("""
+                SELECT AppointmentID, ElderID, DoctorName, Title, Location, Notes, AppointmentDate, AppointmentTime FROM Appointments WHERE 
+                 ElderID = :elder_id AND AppointmentDate BETWEEN CAST(GETDATE() AS date) AND DATEADD(day,7,CAST(GETDATE() AS date))
+                 ORDER BY AppointmentDate ASC, AppointmentTime ASC
+                 """)
+    try:
+        return db.execute(query, {"elder_id": elder_id}).mappings().all()
+    except SQLAlchemyError as e:
+        raise RuntimeError("DB error while fetching upcoming appointments") from e
         

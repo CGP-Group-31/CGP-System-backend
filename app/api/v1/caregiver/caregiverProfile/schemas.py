@@ -32,7 +32,7 @@ class CaregiverProfileUpdate(BaseModel):
 
     @field_validator("full_name")
     @classmethod 
-    def validate_name(cls, v:str):
+    def validate_name(cls, v:Optional[str]):
         if v is None:
             return v
         v = v.strip()
