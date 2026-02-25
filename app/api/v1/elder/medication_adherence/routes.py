@@ -16,15 +16,17 @@ class MarkTakenRequest(BaseModel):
 
 @router.post("/taken")
 def mark_taken(data: MarkTakenRequest, db: Session = Depends(get_db)):
-    q = text("""UPDATE MedicationAdherence
-        SET StatusID = 2,
-            TakenAt = GETDATE()
-        WHERE ScheduleID = :sid
-          AND ElderID = :eid
-          AND ScheduledFor = :sf
-          AND StatusID = 1;
+    q = text("""
+            UPDATE MedicationAdherence
+            SET StatusID = 2,
+                TakenAt = SYSDATETIME()
+            WHERE ScheduleID = :sid
+            AND ElderID = :eid
+            AND ScheduledFor = TRY_CONVERT(datetime2, REPLACE(LEFT(:sf, 19), 'T', ' '))
+            AND StatusID = 1;
 
-        SELECT @@ROWCOUNT AS affected;""")
+            SELECT @@ROWCOUNT AS affected;
+            """)
 
     row = db.execute(q, {"sid": data.scheduleId, "eid": data.elderId, "sf": data.scheduledFor}).fetchone()
     db.commit()
