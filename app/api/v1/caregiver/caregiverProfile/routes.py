@@ -31,7 +31,7 @@ def update_profile(caregiver_id: int, data: CaregiverProfileUpdate, db: Session 
 
     if updated == "no_fields":
         raise HTTPException(status_code=400, detail="No fields provided")
-    if updated == "no_fields":
+    if updated == "not_found":
         raise HTTPException(status_code=404, detail="Caregiver not found")
     db.commit()
     return {"message": "Profile updated successfully"}

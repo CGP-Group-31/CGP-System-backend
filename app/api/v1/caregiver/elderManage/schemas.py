@@ -10,7 +10,7 @@ class ElderDetailsResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     full_name: str = Field(alias="FullName")
-    #email: EmailStr = Field(alias="Email")
+    email: EmailStr = Field(alias="Email")
     phone: str = Field(alias="Phone")
     date_of_birth: date = Field(alias="DateOfBirth")
     gender: str = Field(alias="Gender")
