@@ -32,7 +32,7 @@ from app.core.scheduler import start_scheduler
 from app.api.v1.elder.medication_adherence.routes import router as elder_medication
 
 from app.modules.notifications.router import router as notifications_router
-
+from app.messaging.routes import router as messaging_router
 app = FastAPI(
     title="Elder Care Backend",
     version="1.0.0"
@@ -63,7 +63,7 @@ app.include_router(notifications_router, prefix="/api/v1")
 
 app.include_router(elder_medication, prefix="/api/v1/elder")
 
-
+app.include_router(messaging_router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
