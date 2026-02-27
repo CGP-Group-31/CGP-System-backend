@@ -30,7 +30,7 @@ import app.modules.notifications.router
 from app.core.scheduler import start_scheduler
 
 from app.api.v1.elder.medication_adherence.routes import router as elder_medication
-
+from app.api.v1.elder.elderProfile.routes import router as elder_profile
 from app.modules.notifications.router import router as notifications_router
 
 app = FastAPI(
@@ -54,6 +54,7 @@ app.include_router(caregiver_vital_mgt, prefix="/api/v1/caregiver")
 
 #elder routes
 app.include_router(elder_auth, prefix="/api/v1/elder")
+app.include_router(elder_profile, prefix="/api/v1/elder")
 # app.include_router(caregiver_profile, prefix="/api/v1/caregiver", tags=["Caregiver"])
 # app.include_router(caretaker_auth, prefix="/api/v1/caretaker", tags=["Caretaker"])
 
