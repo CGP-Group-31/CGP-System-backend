@@ -3,8 +3,7 @@ from sqlalchemy import Engine
 from app.core.database import get_db
 from app.messaging.schemas import SendMessageIn, MessagesListOut, MessageOut, MarkReadIn
 from app.messaging import repository as crud
-from app.services.fcm_service import send_push_notification  # <-- your existing function
-
+from app.services.fcm_service import send_push_notification  
 router = APIRouter(prefix="/api/messages", tags=["Messages"])
 
 @router.post("/send", response_model=dict)

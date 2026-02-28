@@ -9,7 +9,7 @@ class ElderLogin(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6, max_length=30)
     fcm_token: Optional[str] = None
-    app_type: str
+    app_type: str = Field(..., min_length=3)
     device_model: Optional[str] = None
     timezone_name: str
     timezone_offset: str
@@ -25,3 +25,4 @@ class ElderLoginResponse(BaseModel):
     created_at: datetime
     relationshipid: Optional[int] = None
     caregiverid: Optional[int] = None
+    emergency_phone: Optional[str] = None
