@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.security import verify_password
 from app.core.database import get_db
-from .repository import login_elder, upsert_user_device, get_primary_relationship,  update_user_timezone_and_lastlogin
+from .repository import login_elder, upsert_user_device, get_primary_relationship,  update_user_timezone_and_lastlogin,  get_primary_emergency_contact_phone
 
 from .schemas import  ElderLogin, ElderLoginResponse
 
@@ -31,11 +31,6 @@ def login(data: ElderLogin, db: Session = Depends(get_db)):
             timezone_offset=data.timezone_offset
         )
 
-        # db.execute(
-        #     text("""INSERT INTO UserLogins (UserID, RoleID, LoginTime) VALUES (:uid, :rid, GETDATE())"""),
-        #     {"uid": user["UserID"], "rid": user["RoleID"]}
-        # )
-
         if data.fcm_token:
             upsert_user_device(
                 db,
@@ -44,7 +39,9 @@ def login(data: ElderLogin, db: Session = Depends(get_db)):
                 data.app_type,
                 data.device_model or "unknown"
             )
+
         relationship = get_primary_relationship(db, elder_id=user["UserID"])
+        emergency_phone = get_primary_emergency_contact_phone(db, elder_id=user["UserID"])
 
         db.commit()
 
@@ -62,6 +59,7 @@ def login(data: ElderLogin, db: Session = Depends(get_db)):
         "date_of_birth": user["DateOfBirth"],
         "gender": user["Gender"],
         "created_at": user["CreatedAt"],
-        "relationshipid": relationship["RelationshipID"],
-        "caregiverid": relationship["CaregiverID"],
+        "relationshipid": relationship["RelationshipID"] if relationship else None,
+        "caregiverid": relationship["CaregiverID"] if relationship else None,
+        "emergency_phone": emergency_phone
     }
