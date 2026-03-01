@@ -19,14 +19,16 @@ class CaregiverProfileUpdate(BaseModel):
     full_name:Optional[str]=Field(None, min_length=3, max_length=100)
     phone: Optional[str]=Field(None, min_length=8, max_length=12)
     address: Optional[str] = Field(None, min_length=3, max_length=200)
+    email: Optional[EmailStr] = Field(None, min_length=3, max_length=200)
+    password: Optional[str] = Field(None, min_length=3, max_length=200)
 
     @field_validator("phone")
     @classmethod
-    def validate_phone(cls, v):
+    def validate_phone(cls, v: Optional[str]):
         if v is None:
             return v
-        v=v.strip()
-        if not PHONE_REGEX.match(v):
+        v=v.strip().replace(" ","").replace("-","")
+        if not PHONE_REGEX.fullmatch(v):
             raise ValueError("Invalid phone format")
         return v
 
@@ -39,9 +41,24 @@ class CaregiverProfileUpdate(BaseModel):
         if not NAME_REGEX.match(v):
             raise ValueError("Invalid  name")
         return v
+    
 
+    @field_validator("email")
+    @classmethod 
+    def normalize_email(cls, v:Optional[EmailStr]):
+        if v is None:
+            return v
+        return v.lower().strip()
+    
+    
+    @field_validator("password")
+    @classmethod 
+    def password_check(cls, v:Optional[str]):
+        if v is None:
+            return v
+        v=v.strip()
+        if not re.search(r"[A-Za-z]", v) or not re.search(r"\d",v):
+            raise ValueError("Password must contain atleast 1 letter and 1 number")
+        return v
+       
 
-
-#class CaregiverPasswordRequest(BaseModel):
- #   old_pwd: str
-  #  new_pwd: str

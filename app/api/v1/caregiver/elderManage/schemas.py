@@ -20,12 +20,12 @@ class ElderProfileResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     elder_id: int = Field(alias="ElderID")
-    blood_type: str = Field(alias="BloodTyoe")
-    allergies: str = Field(alias="Allergies")
-    chronic_conditions: str = Field(alias="ChronicConditions")
-    emergency_notes: str = Field(alias="EmergencyNotes")
-    past_surgeries: str = Field(alias="Pastsurgeries")
-    preferred_doctor_id: int = Field(alias="PreferredDoctorID")
+    blood_type: Optional[str] = Field(alias="BloodType")
+    allergies: Optional[str] = Field(alias="Allergies")
+    chronic_conditions: Optional[str] = Field(alias="ChronicConditions")
+    emergency_notes: Optional[str] = Field(alias="EmergencyNotes")
+    past_surgeries: Optional[str] = Field(alias="PastSurgeries")
+    preferred_doctor_id: Optional[int] = Field(alias="PreferredDoctorID")
 
 class ElderUpdate(BaseModel):
     full_name: Optional[str]= Field(None, min_length=3, max_length=100)
@@ -53,19 +53,4 @@ class ElderUpdate(BaseModel):
             raise ValueError("Invalid name")
         return v
 
-class ElderProfileUpdate(BaseModel):
-    blood_type: Optional[str]=Field(None, min_length=1, max_length=3)
-    allergies: Optional[str]=Field(None, max_length=500)
-    chronic_conditions: Optional[str]=Field(None, max_length=500)
-    emergency_notes: Optional[str]=Field(None, max_length=500)
-    past_surgeries: Optional[str]=Field(None, max_length=500)
-    preferred_doctor_id: Optional[int]=Field(None, gt=0)
 
-    @field_validator("blood_type")
-    @classmethod
-    def check_letters_only(cls, v):
-        if v is None:
-            return v
-        if not re.match('^[a-zA-Z]+$',v):
-            raise ValueError('Only letter allowed')
-        return v

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from .schemas import *
 
 from app.core.database import get_db
-from .repository import get_caregiver_name, missed_tdy_count, upcoming_appointment_count, latest_location
+from .repository import get_caregiver_name, missed_tdy_count, upcoming_appointment_count
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -20,13 +20,7 @@ def missed_today(elder_id: int, db:Session=Depends(get_db)):
     return{"elder_id": elder_id, "missed_tdy_count": cnt}
 
 @router.get("/elder/{elder_id}/appointments/upcoming-count", response_model=UpcomingAppointmentCountResponse)
-def upcoming_appointments(elder_id: int, db:Session=Depends(get_db)):
+def upcoming_appointments_7_days(elder_id: int, db:Session=Depends(get_db)):
     cnt= upcoming_appointment_count(db,elder_id)
     return{"elder_id": elder_id, "upcoming_count": cnt}
 
-@router.get("/elder/{elder_id}/location/latest", response_model=LocationResponse)
-def elder_latest_location(elder_id: int, db:Session=Depends(get_db)):
-    loc= latest_location(db,elder_id)
-    if not loc:
-        raise HTTPException(status_code=404, detail="No location found")
-    return{"elder_id": elder_id, "location": loc}
