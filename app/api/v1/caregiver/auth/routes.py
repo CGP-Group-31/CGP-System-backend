@@ -71,5 +71,6 @@ def login(data: CaregiverLogin, db: Session = Depends(get_db)):
         "date_of_birth": user["DateOfBirth"],
         "gender": user["Gender"],
         "created_at": user["CreatedAt"],
-        "relationships": login_data["relationships"]
+        "elder_id": login_data["elder_id"],
+        "relationship_id": login_data["relationship_id"],
     }
