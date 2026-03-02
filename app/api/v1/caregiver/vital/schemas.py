@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+from pydantic import BaseModel, Field, ConfigDict, RootModel
+from typing import Optional, Dict, List
 from datetime import datetime
 
 class VitalCreate(BaseModel):
@@ -9,21 +9,25 @@ class VitalCreate(BaseModel):
     notes: Optional[str]=Field(None, max_length=255)
     caregiver_id: int = Field(..., gt=0)
 
-class GetVitalTypes(BaseModel):
+class VitalTypeResponse(BaseModel):
     VitalTypeID: int
     VitalName: str
+    Unit: str
+
+class GetVital(BaseModel):
+    data: List[VitalTypeResponse]
 
 
 class VitalResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    record_id: int 
+    vital_type_id: int
+    value: float
+    unit: Optional[str] = None
+    notes: Optional[str] = None
+    recorded_at: datetime
 
-    elder_id: int = Field(alias="ElderID")
-    vital_type_id: int = Field(alias="VitalTypeID")
-    value: float = Field(alias="Value")
-    notes: str = Field(alias="Notes")
+class VitalLAtestResponse(RootModel[Dict[str, Optional[VitalResponse]]]):
+    pass
 
-class VitalUpdate(BaseModel):
-    #vital_type_id: int
-    value: Optional[float] = Field(None, gt=-1)
-    notes: Optional[str]=Field(None, max_length=255)
+
  

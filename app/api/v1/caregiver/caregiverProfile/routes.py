@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from .schemas import *
-from .repository import(get_caregiver_profile,update_caregiver_profile,deactivate_account, if_caregiver_exist)
+from .repository import(get_caregiver_profile,update_caregiver_profile,deactivate_account)
+from app.core.authorization import if_caregiver_exist
 
 
 router= APIRouter(prefix="/caregiver-profile", tags=["Caregiver Profile"])

@@ -1,8 +1,9 @@
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from .schemas import VitalCreate, VitalResponse
 
-def create_vital_record(db: Session, data: dict):
+def create_vital_record(db: Session, data: VitalCreate):
         query = text("""
             INSERT INTO VitalRecords (ElderID, VitalTypeID, Value, Notes, RecordedBy, RecordedAt)
             VALUES (:elder_id, :vital_type_id, :value, :notes, :caregiver_id, GETDATE());  
@@ -26,7 +27,7 @@ def create_vital_record(db: Session, data: dict):
 
 def all_vital_types(db: Session):
     query = text("""
-                SELECT VitalTypeID, VitalName FROM VitalTypes 
+                SELECT VitalTypeID, VitalName, Unit FROM VitalTypes 
                  """)
     try:
         return db.execute(query).mappings().all()
@@ -35,51 +36,36 @@ def all_vital_types(db: Session):
 
 
 
-def get_vitals(db: Session, elder_id: int):
+def get_vitals(db: Session, elder_id: int) -> dict:
     query = text("""
-                SELECT RecordID, ElderID, VitalTypeID, Value, Notes FROM VitalRecords WHERE ElderID = :elder_id 
+                SELECT vt.VitalTypeID, vt.VitalName, vt.Unit FROM VitalTypes vt OUTER APPLY(SELECT TOP 1 RecordID, ElderID, Value, Notes, RecordedAt FROM VitalRecords vr WHERE ElderID = :elder_id AND 
+                vr.VitalTypeID = vt.VitalTypeID ORDER BY vr.RecordedAt DESC, vr.RecordID DESC) vr2 ORDER BY vt.VitalName;
                  """)
     
     try:
-        return db.execute(query, {"elder_id": elder_id}).mappings().first()
+        row =  db.execute(query, {"elder_id": elder_id}).mappings().all()
+        if not row:
+            return {}
+        result: dict={}
+
+        for r in row:
+            vital_name= r["VitalName"]
+            if r["RecordID"] is None:
+                result[vital_name] = None
+                continue
+            result[vital_name]= {
+                "record_id": int(r["RecordID"]),
+                "vital_type_id": int(r["VitalTypeID"]),
+                "value": float(r["Value"]),
+                "unit": r["Unit"],
+                "notes": r["Notes"],
+                "recorded_at": r["RecordedAt"]
+            }
+
+        return result
+
     except SQLAlchemyError as e:
         raise RuntimeError("DB error while fetching vital data") from e
 
 
 
-def update_vitals(db: Session, record_id: int, data: dict):
-    update_field ={}
-    query_part=[]
-
-
-    if "vital_type_id" is not None:
-        query_part.append("VitalTypeID= :vital_type_id")
-        update_field["vital_type_id"] = data.vital_type_id
-
-    if "title" is not None:
-        query_part.append("Title= :title")
-        update_field["title"] = data.title
-
-    if "value" is not None:
-        query_part.append("Value= :value")
-        update_field["value"] = data.value
-
-    if "notes" is not None:
-        query_part.append("Notes= :notes")
-        update_field["notes"] = data.notes
-
-    if not query_part:
-        return "no_fields"
-    
-    query = text(f"""
-                UPDATE VitalRecords SET {', '.join(query_part)} 
-                WHERE RecordID= :record_id 
-                """)
-    
-    update_field["record_id"]= record_id
-
-    try:
-        result = db.execute(query, update_field)
-        return "updated" if result.rowcount >0 else "not_found"
-    except SQLAlchemyError as e:
-        raise RuntimeError("DB error while updating vitals") from e
