@@ -3,10 +3,10 @@ from datetime import datetime
 from typing import Optional,List
 
 class TodayMedsResponse(BaseModel):
-    adherence_id: int = Field(alias="AdherenceID")
-    elder_id: int = Field(alias="ElderID")
-    schedule_id: int = Field(alias="ScheduleID")
-    medication_id: int = Field(alias="MedicationID")
+    adherence_id: int = Field(..., alias="AdherenceID")
+    elder_id: int = Field(...,alias="ElderID")
+    schedule_id: int = Field(...,alias="ScheduleID")
+    medication_id: int = Field(...,alias="MedicationID")
     medication_name: int = Field(alias="MedicationName")
     dosage: int = Field(alias="Dosage")
     scheduled_for: int = Field(alias="ScheduledFor")

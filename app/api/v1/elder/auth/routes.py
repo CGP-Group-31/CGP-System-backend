@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.security import verify_password
 from app.core.database import get_db
-from .repository import login_elder, upsert_user_device
+from .repository import login_elder, upsert_user_device, get_primary_relationship,  update_user_timezone_and_lastlogin,  get_primary_emergency_contact_phone
+
 from .schemas import  ElderLogin, ElderLoginResponse
 
 from sqlalchemy import text
@@ -13,25 +14,21 @@ router = APIRouter(prefix="/elder", tags=["Elder login"])
 @router.post("/login", response_model=ElderLoginResponse)
 def login(data: ElderLogin, db: Session = Depends(get_db)):
 
-    login = login_elder(db, data.email)
-
-    if not login:
+    login_result = login_elder(db, data.email)
+    if not login_result:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    user = login["user"]
+    user = login_result["user"]
 
     if not verify_password(data.password, user["PasswordHash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password. Try again")
 
     try:
-        db.execute(
-            text("""INSERT INTO UserLogins (UserID, RoleID, LoginTime) VALUES (:uid, :rid, GETDATE())"""),
-            {"uid": user["UserID"], "rid": user["RoleID"]}
-        )
-
-        db.execute(
-            text("""UPDATE Users SET LastLogin = GETDATE() WHERE UserID = :uid"""),
-            {"uid": user["UserID"]}
+        update_user_timezone_and_lastlogin(
+            db=db,
+            user_id=user["UserID"],
+            timezone_name=data.timezone_name,
+            timezone_offset=data.timezone_offset
         )
 
         if data.fcm_token:
@@ -40,23 +37,29 @@ def login(data: ElderLogin, db: Session = Depends(get_db)):
                 user["UserID"],
                 data.fcm_token,
                 data.app_type,
-                data.device_model
+                data.device_model or "unknown"
             )
+
+        relationship = get_primary_relationship(db, elder_id=user["UserID"])
+        emergency_phone = get_primary_emergency_contact_phone(db, elder_id=user["UserID"])
 
         db.commit()
 
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
-    
+
     return {
         "user_id": user["UserID"],
-        "role_id": user["RoleID"], 
+        "role_id": user["RoleID"],
         "full_name": user["FullName"],
         "email": user["Email"],
         "phone": user["Phone"],
         "address": user["Address"],
         "date_of_birth": user["DateOfBirth"],
         "gender": user["Gender"],
-        "created_at": user["CreatedAt"]
+        "created_at": user["CreatedAt"],
+        "relationshipid": relationship["RelationshipID"] if relationship else None,
+        "caregiverid": relationship["CaregiverID"] if relationship else None,
+        "emergency_phone": emergency_phone
     }
