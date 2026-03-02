@@ -50,17 +50,6 @@ def get_all_appointments(db: Session, elder_id: int):
         raise RuntimeError("DB error while fetching appointments") from e
 
 
-def get_one_appointment(db: Session, appointment_id: int):
-    query = text("""
-                SELECT AppointmentID, ElderID, DoctorName, Title, Location, Notes, AppointmentDate, AppointmentTime FROM Appointments WHERE AppointmentID = :appointment_id 
-                 """)
-    try:
-        return db.execute(query, {"appointment_id": appointment_id}).mappings().first()
-    except SQLAlchemyError as e:
-        raise RuntimeError("DB error while fetching an appointment") from e
-
-
-
 def update_appointment(db: Session, appointment_id: int, data):
     update_field ={}
     query_part=[]

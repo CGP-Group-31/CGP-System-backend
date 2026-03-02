@@ -4,17 +4,6 @@ from app.core.security import hash_password, verify_password
 from sqlalchemy.exc import SQLAlchemyError
 
 
-def if_caregiver_exist(db:Session, caregiver_id: int):
-    query = text("""
-            SELECT 1 FROM Users WHERE UserID = :user_id AND RoleID = 4 AND IsActive =1;
-        """)
-    try:
-        return bool(db.execute(query, {"user_id": caregiver_id}).scalar())
-    except SQLAlchemyError as e:
-        raise RuntimeError("DB error while checking caregiver existence") from e
-
-
-
 def get_caregiver_profile(db: Session, caregiver_id: int):
     query = text("""
             SELECT UserID, FullName, Email, Phone, Address, DateOfBirth, Gender
@@ -44,6 +33,14 @@ def update_caregiver_profile(db: Session, caregiver_id: int, data):
         query_part.append("Address= :address")
         update_field["address"] = data.address.strip()
 
+    if data.email is not None:
+        query_part.append("Email= :email")
+        update_field["email"] = data.email.strip().lower()
+
+    if data.password is not None:
+        query_part.append("Password= :password")
+        update_field["password"] = hash_password(data.password)
+
     if not query_part:
         return "no_fields"
 
@@ -60,8 +57,6 @@ def update_caregiver_profile(db: Session, caregiver_id: int, data):
         raise RuntimeError("DB error while updating caregiver profile") from e
 
     
-
-#password update..?
 
 def deactivate_account(db: Session, caregiver_id: int):
     query =text("""

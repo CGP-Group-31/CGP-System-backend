@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from .schemas import AppointmentCreate, AppointmentResponse, AppointmentUpdate
-from .repository import(get_all_appointments, update_appointment, get_one_appointment, delete_appointment, create_appointment, upcoming_appointments)
+from .repository import(get_all_appointments, update_appointment,  delete_appointment, create_appointment, upcoming_appointments)
 from typing import List
 from .repository import (upsert_appointment_reminders, delete_appointment_reminders)
 
@@ -20,6 +20,7 @@ def create_appointments_for_elder(data: AppointmentCreate, db: Session = Depends
     db.commit()
     return {"message": "Appointment created successfully", "appointment_id": appointment_id}
 
+
 @router.get("/elder/{elder_id}", response_model=List[AppointmentResponse])
 def get_all_appointments_of_elder(elder_id: int, db: Session = Depends(get_db)):
     appointments = get_all_appointments(db, elder_id)
@@ -28,15 +29,6 @@ def get_all_appointments_of_elder(elder_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Appointments not found")
     return appointments
 
-   
-
-@router.get("/{appointment_id}", response_model=AppointmentResponse)
-def get_one_appointment_of_elder(appointment_id: int, db: Session = Depends(get_db)):
-    appointment = get_one_appointment(db, appointment_id)
-
-    if not appointment:
-        raise HTTPException(status_code=404, detail="Appointment not found")
-    return appointment
 
 
 @router.patch("/{appointment_id}", response_model=dict)
@@ -54,6 +46,8 @@ def update_appointment_of_elder(appointment_id: int, data: AppointmentUpdate, db
     db.commit()
     return {"message": "Appointment updated successfully"}
 
+
+
 @router.delete("/{appointment_id}", response_model=dict)
 def delete_appointment_for_elder(appointment_id: int, db: Session = Depends(get_db)):
     #  delete reminders first (foreign key safe)
@@ -62,10 +56,11 @@ def delete_appointment_for_elder(appointment_id: int, db: Session = Depends(get_
     deleted = delete_appointment(db, appointment_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Appointment not found")
-
-    db.commit()
     return {"message": "Appointment deleted successfully"}
-@router.get("/elder/{elder_id}/upcoming-7-days", response_model=AppointmentResponse)
+
+
+    
+@router.get("/elder/{elder_id}/upcoming-7-days", response_model=List[AppointmentResponse])
 def get_appointment_of_7(elder_id: int, db: Session = Depends(get_db)):
     appointment = upcoming_appointments(db, elder_id)
 
