@@ -53,12 +53,11 @@ def delete_appointment_for_elder(appointment_id: int, db: Session = Depends(get_
     deleted = delete_appointment(db, appointment_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Appointment not found")
-
-
-@router.get("/elder/{elder_id}/upcoming-7-days", response_model=List[AppointmentResponse])
-
+    
     db.commit()
     return {"message": "Appointment deleted successfully"}
+
+
 @router.get("/elder/{elder_id}/upcoming-7-days", response_model=AppointmentResponse)
 def get_appointment_of_7(elder_id: int, db: Session = Depends(get_db)):
     appointment = upcoming_appointments(db, elder_id)
