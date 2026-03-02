@@ -1,17 +1,18 @@
-
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
 
 class ElderLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=6, max_length=30)
     fcm_token: Optional[str] = None
-    app_type: str
+    app_type: str = Field(..., min_length=3)
     device_model: Optional[str] = None
-
+    timezone_name: str
+    timezone_offset: str
 class ElderLoginResponse(BaseModel):
     user_id: int
     role_id: int
@@ -22,3 +23,6 @@ class ElderLoginResponse(BaseModel):
     date_of_birth: date
     gender: str
     created_at: datetime
+    relationshipid: Optional[int] = None
+    caregiverid: Optional[int] = None
+    emergency_phone: Optional[str] = None
