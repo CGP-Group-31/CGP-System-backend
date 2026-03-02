@@ -1,71 +1,38 @@
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from .schemas import VitalCreate, VitalResponse
 
-def create_vital_record(db: Session, data: VitalCreate):
-        query = text("""
-            INSERT INTO VitalRecords (ElderID, VitalTypeID, Value, Notes, RecordedBy, RecordedAt)
-            VALUES (:elder_id, :vital_type_id, :value, :notes, :caregiver_id, GETDATE());  
-        """)
-        try:
-            result= db.execute(query, {
-                "elder_id": data.elder_id,
-                "vital_type_id" : data.vital_type_id,
-                "value" : data.value,
-                "notes" :data.notes,
-                "caregiver_id": data.caregiver_id
-            })
+def list_vital_types(db: Session):
+    q = text("""SELECT VitalTypeID, VitalName, Unit FROM VitalTypes ORDER BY VitalTypeID ASC""")
+    return db.execute(q).mappings().all()
 
-            return result.rowcount >0
-        
-        except SQLAlchemyError as e:
-            db.rollback()
-            raise RuntimeError("DB error while creating vitals") from e
+def create_vital_record(db: Session, elder_id: int, vital_type_id: int, value: float, notes: str | None, recorded_by: int):
+    # SQL Server: OUTPUT INSERTED...
+    q = text("""INSERT INTO VitalRecords (ElderID, VitalTypeID, Value, Notes, RecordedBy)
+        OUTPUT INSERTED.RecordID, INSERTED.RecordedAt
+        VALUES (:elder_id, :vital_type_id, :value, :notes, :recorded_by)""")
+    row = db.execute(q, {
+        "elder_id": elder_id,
+        "vital_type_id": vital_type_id,
+        "value": value,
+        "notes": notes,
+        "recorded_by": recorded_by
+    }).mappings().first()
+    return row  # {"RecordID": ..., "RecordedAt": ...}
 
+def get_latest_vitals_by_type(db: Session, elder_id: int, limit_per_type: int):
 
-
-def all_vital_types(db: Session):
-    query = text("""
-                SELECT VitalTypeID, VitalName, Unit FROM VitalTypes 
-                 """)
-    try:
-        return db.execute(query).mappings().all()
-    except SQLAlchemyError as e:
-        raise RuntimeError("DB error while fetching existing vital") from e
-
-
-
-def get_vitals(db: Session, elder_id: int) -> dict:
-    query = text("""
-                SELECT vt.VitalTypeID, vt.VitalName, vt.Unit FROM VitalTypes vt OUTER APPLY(SELECT TOP 1 RecordID, ElderID, Value, Notes, RecordedAt FROM VitalRecords vr WHERE ElderID = :elder_id AND 
-                vr.VitalTypeID = vt.VitalTypeID ORDER BY vr.RecordedAt DESC, vr.RecordID DESC) vr2 ORDER BY vt.VitalName;
-                 """)
-    
-    try:
-        row =  db.execute(query, {"elder_id": elder_id}).mappings().all()
-        if not row:
-            return {}
-        result: dict={}
-
-        for r in row:
-            vital_name= r["VitalName"]
-            if r["RecordID"] is None:
-                result[vital_name] = None
-                continue
-            result[vital_name]= {
-                "record_id": int(r["RecordID"]),
-                "vital_type_id": int(r["VitalTypeID"]),
-                "value": float(r["Value"]),
-                "unit": r["Unit"],
-                "notes": r["Notes"],
-                "recorded_at": r["RecordedAt"]
-            }
-
-        return result
-
-    except SQLAlchemyError as e:
-        raise RuntimeError("DB error while fetching vital data") from e
-
-
-
+    q = text("""WITH Ranked AS (SELECT vr.RecordID, vr.ElderID, vr.VitalTypeID, vt.VitalName, vt.Unit,
+                vr.Value, vr.Notes, vr.RecordedBy, vr.RecordedAt,
+                ROW_NUMBER() OVER (
+                    PARTITION BY vr.VitalTypeID
+                    ORDER BY vr.RecordedAt DESC) AS rn
+            FROM VitalRecords vr
+            JOIN VitalTypes vt ON vt.VitalTypeID = vr.VitalTypeID
+            WHERE vr.ElderID = :elder_id)
+        SELECT RecordID, ElderID, VitalTypeID, VitalName, Unit, Value, Notes, RecordedBy, RecordedAt
+        FROM Ranked
+        WHERE rn <= :limit_per_type
+        ORDER BY VitalTypeID ASC, RecordedAt DESC""")
+    rows = db.execute(q, {"elder_id": elder_id, "limit_per_type": limit_per_type}).mappings().all()
+    return rows
