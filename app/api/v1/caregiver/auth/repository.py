@@ -73,19 +73,26 @@ def login_caregiver(db: Session, email: str):
     )
 
     user = user_result.mappings().first()
-
     if not user:
         return None
 
-    # Get caregiver relationships
     relationships_result = db.execute(
         text("""SELECT RelationshipID, ElderID, CaregiverID
             FROM CareRelationships WHERE CaregiverID = :caregiver_id"""),
         {"caregiver_id": user["UserID"]}
     )
 
-    relationships = relationships_result.mappings().all()
+    relationship_row = relationships_result.mappings().first()
+
+    if relationship_row:
+        elder_id = relationship_row["ElderID"]
+        relationship_id = relationship_row["RelationshipID"]
+    else:
+        elder_id = None
+        relationship_id = None
+
     return {
         "user": user,
-        "relationships": relationships
+        "elder_id": elder_id,
+        "relationship_id": relationship_id
     }
