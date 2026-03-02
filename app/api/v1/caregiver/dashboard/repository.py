@@ -40,17 +40,6 @@ def upcoming_appointment_count(db:Session, elder_id: int) -> int:
         raise RuntimeError("DB error while fetching upcoming appointment count") from e
 
 
-def latest_location(db: Session, elder_id: int) -> dict|None:
-    query = text("""
-SELECT TOP 1 TrackID, Latitude, Longitude, RecordeAt FROM LocationTrack WHERE ElderID=:elder_id
-ORDER BY RecordedAt DESC
-""")
-    
-    try:
-        row = db.execute(query,{"elder_id": elder_id}).mappings().first()
-        return dict(row) if row else None
-    except SQLAlchemyError as e:
-        raise RuntimeError("DB error while fetching location") from e
 
 
 
