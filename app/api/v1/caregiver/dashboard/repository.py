@@ -40,8 +40,42 @@ def upcoming_appointment_count(db:Session, elder_id: int) -> int:
         raise RuntimeError("DB error while fetching upcoming appointment count") from e
 
 
+def get_dashboard_home(db: Session, elder_id: int, caregiver_id: int) -> dict:
+    name = get_caregiver_name(db, caregiver_id)
+    if not name:
+        return {"ok": False, "error": "Caregiver not found"}
+    
+    missed = missed_tdy_count(db, elder_id)
+    upcoming = upcoming_appointment_count(db, elder_id)
 
+    alerts = []
+    if missed > 0:
+        alerts.append({
+            "title": "Missed Medicine",
+            "subtitle": f"{missed} missed dose(s) today",
+            "type": "missed_medicine",
+        })
+    if upcoming > 0:
+        alerts.append({
+            "title": "Upcoming Appointment",
+            "subtitle": f"{upcoming} appointment(s) in next 7 days",
+            "type": "upcoming_appointment",
+        })
 
+    #if there is nothing
+    if not alerts:
+        alerts.append({
+            "title": "All Good!",
+            "subtitle": "No urgent alerts right now",
+            "type": "ok",
+        })
 
-
-
+    return {
+        "ok": True,
+        "elder_id": elder_id,
+        "caregiver_id": caregiver_id,
+        "caregiver_name": name,
+        "missed_medication_today": missed,
+        "upcoming_appointments_7_days": upcoming,
+        "quick_alerts": alerts,
+    }
