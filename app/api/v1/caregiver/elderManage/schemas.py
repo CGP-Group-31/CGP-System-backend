@@ -25,7 +25,7 @@ class ElderProfileResponse(BaseModel):
     chronic_conditions: Optional[str] = Field(alias="ChronicConditions")
     emergency_notes: Optional[str] = Field(alias="EmergencyNotes")
     past_surgeries: Optional[str] = Field(alias="PastSurgeries")
-    preferred_doctor_id: Optional[int] = Field(alias="PreferredDoctorID")
+    preferred_doctor_name: Optional[str] = Field(alias="DoctorName")
 
 class ElderUpdate(BaseModel):
     full_name: Optional[str]= Field(None, min_length=3, max_length=100)

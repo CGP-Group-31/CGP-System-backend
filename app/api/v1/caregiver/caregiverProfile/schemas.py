@@ -11,6 +11,7 @@ class CaregiverProfileResponse(BaseModel):
     user_id: int = Field(alias="UserID")
     full_name: str = Field(alias="FullName")
     email: EmailStr = Field(alias="Email")
+    address: str = Field(alias="Address")
     phone: str = Field(alias="Phone")
     date_of_birth: date = Field(alias="DateOfBirth")
     gender: str = Field(alias="Gender")
