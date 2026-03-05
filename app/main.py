@@ -45,7 +45,7 @@ from app.api.v1.elder.medication_adherence.routes import router as elder_medicat
 
 
 app = FastAPI(
-    title="Elder Care Backend",
+    title="TrustCare Backend test",
     version="1.0.0"
 )
 @app.on_event("startup")
