@@ -4,6 +4,7 @@ from .schemas import *
 
 from app.core.database import get_db
 from .repository import get_caregiver_name, missed_tdy_count, upcoming_appointment_count
+from .repository import get_caregiver_name, missed_tdy_count, upcoming_appointment_count, get_dashboard_home
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -24,3 +25,10 @@ def upcoming_appointments_7_days(elder_id: int, db:Session=Depends(get_db)):
     cnt= upcoming_appointment_count(db,elder_id)
     return{"elder_id": elder_id, "upcoming_count": cnt}
 
+@router.get("/elder/{elder_id}/home", response_model=DashboardHomeResponse)
+def dashboard_home(elder_id: int, caregiver_id: int, db: Session = Depends(get_db)):
+    data = get_dashboard_home(db, elder_id, caregiver_id)
+    if not data.get("ok"):
+        raise HTTPException(status_code=404, detail=data.get("error", "Not found"))
+    data.pop("ok", None)
+    return data

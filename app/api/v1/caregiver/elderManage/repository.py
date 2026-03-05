@@ -42,8 +42,10 @@ def get_elder(db:Session, elder_id: int):
 def get_elder_profile(db:Session, elder_id: int):
     row =  db.execute(
         text("""
-            SELECT ElderID, BloodType, Allergies, ChronicConditions,
-            EmergencyNotes, PastSurgeries, PreferredDoctorID FROM ElderProfiles WHERE ElderID= :user_id 
+            SELECT e.ElderID, e.BloodType, e.Allergies, e.ChronicConditions,
+            e.EmergencyNotes, e.PastSurgeries, e.PreferredDoctorID, d.FullName AS DoctorName FROM ElderProfiles e
+            LEFT JOIN Users d ON e.PreferredDoctorID=d.UserID AND d.RoleID=2 AND d.IsActive=1
+            WHERE e.ElderID= :user_id 
         """),{"user_id": elder_id}).mappings().first()
 
     if not row:

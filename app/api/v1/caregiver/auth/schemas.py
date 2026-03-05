@@ -39,10 +39,12 @@ class CaregiverLoginResponse(BaseModel):
     user_id: int
     role_id: int
     full_name: str
-    email: EmailStr
+    email: str
     phone: str
     address: str
     date_of_birth: date
     gender: str
-    created_at: datetime  
-    relationships: List[RelationshipResponse]
+    created_at: datetime
+
+    elder_id: int
+    relationship_id: int 

@@ -4,8 +4,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.exceptions import register_exception_handlers
 
 from contextlib import asynccontextmanager
-
-
 import os
 
 from app.core.exceptions import (
@@ -15,6 +13,8 @@ from app.core.exceptions import (
 )
 import app.modules.notifications.router
 from app.core.scheduler import start_scheduler
+from app.modules.notifications.router import router as notifications_router
+from app.messaging.routes import router as messaging_router
 
 
 #caregiver routes
@@ -27,9 +27,7 @@ from app.api.v1.caregiver.elderManage.routes import router as caregiver_elder_mg
 from app.api.v1.caregiver.dashboard.routes import router as caregiver_dashboard
 from app.api.v1.caregiver.location.routes import router as caregiver_location
 from app.api.v1.caregiver.vital.routes import router as caregiver_vital_mgt
-
 from app.api.v1.caregiver.reminders.routes import router as caregiver_reminder
-
 
 
 #elder routes
@@ -38,19 +36,13 @@ from app.api.v1.elder.location.routes import router as elder_location
 from app.modules.notifications.router import router as notifications_router
 from app.api.v1.elder.elderProfile.routes import router as elder_profile
 from app.api.v1.elder.auth.routes import router as elder_auth
+from app.api.v1.elder.meals.routes import router as elder_meals
+from app.api.v1.elder.sos.routes import router as sos_router
+from app.api.v1.elder.medication_adherence.routes import router as elder_medication
 # from app.api.v1.caregiver.profile.routes import router as caregiver_profile
 # from app.api.v1.caretaker.auth.routes import router as caretaker_auth
 
 
-
-
-import app.modules.notifications.router
-from app.core.scheduler import start_scheduler
-from app.api.v1.elder.meals.routes import router as elder_meals
-from app.api.v1.elder.sos.routes import router as sos_router
-from app.api.v1.elder.medication_adherence.routes import router as elder_medication
-from app.modules.notifications.router import router as notifications_router
-from app.messaging.routes import router as messaging_router
 
 app = FastAPI(
     title="Elder Care Backend",
@@ -78,24 +70,20 @@ app.include_router(caregiver_reminder, prefix="/api/v1/caregiver")
 
 #elder routes
 app.include_router(elder_auth, prefix="/api/v1/elder")
-
 app.include_router(elder_location, prefix="/api/v1/elder")
 app.include_router(elder_medication, prefix="/api/v1/elder")
 app.include_router(elder_profile, prefix="/api/v1/elder")
-
-app.include_router(notifications_router, prefix="/api/v1")
-
-# app.include_router(caregiver_profile, prefix="/api/v1/caregiver", tags=["Caregiver"])
-# app.include_router(caretaker_auth, prefix="/api/v1/caretaker", tags=["Caretaker"])
-
-# app.include_router(caregiver_profile, prefix="/api/v1/caregiver", tags=["Caregiver"])
-# app.include_router(caretaker_auth, prefix="/api/v1/caretaker", tags=["Caretaker"])
 app.include_router(elder_meals, prefix="/api/v1/elder")
-
-
-app.include_router(notifications_router, prefix="/api/v1")
 app.include_router(sos_router, prefix="/api/v1/elder")
 app.include_router(elder_medication, prefix="/api/v1/elder")
+
+app.include_router(notifications_router, prefix="/api/v1")
+app.include_router(notifications_router, prefix="/api/v1")
+
+# app.include_router(caregiver_profile, prefix="/api/v1/caregiver", tags=["Caregiver"])
+# app.include_router(caretaker_auth, prefix="/api/v1/caretaker", tags=["Caretaker"])
+
+
 
 
 app.include_router(messaging_router)
