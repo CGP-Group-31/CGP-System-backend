@@ -16,7 +16,7 @@ def get_caregiver_name(db:Session, caregiver_id:int) -> str|None:
 def missed_tdy_count(db: Session, elder_id: int)->int:
     query = text("""
     SELECT COUNT(*) AS cnt FROM MedicationAdherence WHERE ElderID=:elder_id
-    AND CAST(ScheduledFor AS date) = CAST(GETDATE() AS date) AND StatusID = 4                 
+    AND CAST(ScheduledFor AS date) = CAST(GETDATE() AS date) AND StatusID = 4 OR StatusID = 3                
 """)
     
     try:
