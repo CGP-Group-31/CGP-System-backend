@@ -1,10 +1,8 @@
-# app/core/encryption.py
-
 from cryptography.fernet import Fernet, InvalidToken
 from app.core.config import settings
 
 try:
-    fernet = Fernet(settings.encryption_key.encode())
+    fernet = Fernet(settings.ENCRYPTION_KEY.encode())
 except Exception:
     raise RuntimeError("Invalid ENCRYPTION_KEY format.")
 
