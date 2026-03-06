@@ -60,7 +60,7 @@ def get_primary_relationship(db: Session, elder_id: int):
     r = db.execute(q, {"elder_id": elder_id}).mappings().first()
     return r 
 def update_user_timezone_and_lastlogin(db, user_id: int, timezone_name: str, timezone_offset: str):
-    tz = f"{timezone_name} {timezone_offset}"  # ex: "IST +05:30"
+    tz = f"{timezone_name} {timezone_offset}"  # "IST +05:30"
     db.execute(
         text("""UPDATE Users SET LastLogin = GETDATE(), Timezone = :tz WHERE UserID = :uid"""),
         {"uid": user_id, "tz": tz}

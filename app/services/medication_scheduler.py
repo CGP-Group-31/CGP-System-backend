@@ -8,6 +8,9 @@ from zoneinfo import ZoneInfo
 TZ = ZoneInfo("Asia/Colombo")
 
 
+STATUS_PENDING = 1
+STATUS_MISSED = 3
+
 def is_due_today(repeat_days: str, start_date: date, today: date) -> bool:
     repeat_days = (repeat_days or "").strip()
 
@@ -88,5 +91,24 @@ def run_due_medication_reminders(db: Session):
                 "durationSec": 60,
             }
         )
+
+    db.commit()
+
+def mark_missed_adherence(db: Session):
+
+    now = datetime.now(TZ)
+    now_for_db = now.replace(tzinfo=None)
+
+    q = text("""UPDATE MedicationAdherence
+        SET StatusID = :missed_id
+        WHERE TakenAt IS NULL
+          AND StatusID = :pending_id
+          AND DATEADD(hour, 3, ScheduledFor) <= :now""")
+
+    db.execute(q, {
+        "missed_id": STATUS_MISSED,
+        "pending_id": STATUS_PENDING,
+        "now": now_for_db
+    })
 
     db.commit()
