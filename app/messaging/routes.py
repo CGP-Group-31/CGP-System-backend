@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException
-from sqlalchemy import Engine
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.messaging.schemas import SendMessageIn, MessagesListOut, MessageOut, MarkReadIn
 from app.messaging import repository as crud
@@ -7,18 +7,20 @@ from app.services.fcm_service import send_push_notification
 router = APIRouter(prefix="/api/messages", tags=["Messages"])
 
 @router.post("/send", response_model=dict)
-def send_message(payload: SendMessageIn):
+def send_message(payload: SendMessageIn, db: Session = Depends(get_db)):
     try:
-        with get_db.begin() as conn:
-            receiver_id = crud.validate_sender_and_get_receiver(
-                conn, payload.relationship_id, payload.sender_id
-            )
+        
+        receiver_id = crud.validate_sender_and_get_receiver(
+            db, payload.relationship_id, payload.sender_id
+        )
 
-            message_id = crud.insert_message(
-                conn, payload.relationship_id, payload.sender_id, payload.message_text
-            )
+        message_id = crud.insert_message(
+            db, payload.relationship_id, payload.sender_id, payload.message_text
+        )
 
-            token = crud.get_user_fcm_token(conn, receiver_id)
+        token = crud.get_user_fcm_token(db, receiver_id)
+
+        db.commit()
 
         # Send FCM AFTER DB commit
         if token:
@@ -49,10 +51,10 @@ def send_message(payload: SendMessageIn):
 
 
 @router.get("", response_model=MessagesListOut)
-def get_messages(relationship_id: int, after_id: int = 0, limit: int = 200):
+def get_messages(relationship_id: int, after_id: int = 0, limit: int = 200, db: Session = Depends(get_db)):
     try:
-        with get_db.begin() as conn:
-            rows = crud.list_messages(conn, relationship_id, after_id, limit)
+        
+        rows = crud.list_messages(db, relationship_id, after_id, limit)
 
         return MessagesListOut(
             relationship_id=relationship_id,
@@ -73,12 +75,14 @@ def get_messages(relationship_id: int, after_id: int = 0, limit: int = 200):
 
 
 @router.put("/read", response_model=dict)
-def mark_read(payload: MarkReadIn):
+def mark_read(payload: MarkReadIn, db: Session = Depends(get_db)):
     try:
-        with get_db.begin() as conn:
-            # validate reader belongs to relationship
-            _ = crud.validate_sender_and_get_receiver(conn, payload.relationship_id, payload.reader_id)
-            updated = crud.mark_messages_read(conn, payload.relationship_id, payload.message_ids)
+        
+        # validate reader belongs to relationship
+        _ = crud.validate_sender_and_get_receiver(db, payload.relationship_id, payload.reader_id)
+        updated = crud.mark_messages_read(db, payload.relationship_id, payload.message_ids)
+
+        db.commit()
 
         return {"status": "ok", "updated": updated}
 
