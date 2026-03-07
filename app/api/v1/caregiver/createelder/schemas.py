@@ -43,7 +43,6 @@ class ElderProfileUpdate(BaseModel):
     chronic_conditions: Optional[str] = None
     emergency_notes: Optional[str] = None
     past_surgeries: Optional[str] = None
-    preferred_doctor_id: Optional[int] = None
 
 class DoctorResponse(BaseModel):
     doctor_id: int
@@ -51,12 +50,12 @@ class DoctorResponse(BaseModel):
     specialization: str
     hospital: str
 
-PHONE_REGEX = re.compile(r"^[0-9+\-\s]{8,12}$")
+PHONE_REGEX = re.compile(r"^[0-9+\-\s]{10,12}$")
 
 class EmergencyContactCreate(BaseModel):
     elder_id: int = Field(..., gt=0)
     contact_name: str = Field(..., min_length=2, max_length=50)
-    phone: str = Field(..., min_length=8, max_length=12)
+    phone: str = Field(..., min_length=10, max_length=12)
     relationship: str = Field(..., min_length=2, max_length=50)
     is_primary: bool = Field(default=False)
 
@@ -97,3 +96,8 @@ class MessageResponse(BaseModel):
 class DoctorSearchRequest(BaseModel):
     doctor_name: Optional[str] = None
     hospital: Optional[str] = None
+
+class ElderDoctorUpdate(BaseModel):
+    preferred_doctor_id: int | None = None
+
+  

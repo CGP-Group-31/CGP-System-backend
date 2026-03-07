@@ -6,8 +6,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from typing import List
 from app.core.security import verify_password
 from app.core.database import get_db
-from .repository import create_elder, create_relationship, add_elder_records, all_doctors
-from .schemas import  ElderProfile , ElderRegisterRequest, ElderRegisterResponse,ElderProfileResponse, ElderProfileUpdate
+from .repository import create_elder, create_relationship, add_elder_records, all_doctors, update_elder_preferred_doctor
+from .schemas import  ElderProfile , ElderRegisterRequest, ElderRegisterResponse,ElderProfileResponse, ElderProfileUpdate, ElderDoctorUpdate
 from .schemas import EmergencyContactCreate, EmergencyContactResponse, DoctorSearchRequest, DoctorResponse,  MessageResponse
 from .repository import create_emergency_contact, get_emergency_contacts, search_doctors, update_elder_profile
 
@@ -150,14 +150,33 @@ def search_doctors_api(
             detail="No doctors found")
 
     return doctors
-@router.put("/elder-profile-update/{elder_id}",status_code=200)
+
+@router.put("/elder-profile-update/{elder_id}", status_code=200)
 def update_elder_profile_api(
     elder_id: int,
     payload: ElderProfileUpdate,
-    db: Session = Depends(get_db)):
+    db: Session = Depends(get_db)
+):
     success, error = update_elder_profile(db, elder_id, payload)
 
     if error:
         raise HTTPException(status_code=400, detail=error)
 
     return {"message": "Elder profile updated successfully"}
+
+@router.put("/elder-profile-update-doctor/{elder_id}", status_code=200)
+def update_elder_preferred_doctor_api(
+    elder_id: int,
+    payload: ElderDoctorUpdate,
+    db: Session = Depends(get_db)
+):
+    success, error = update_elder_preferred_doctor(
+        db,
+        elder_id,
+        payload.preferred_doctor_id
+    )
+
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    return {"message": "Preferred doctor updated successfully"}
