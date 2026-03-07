@@ -24,8 +24,7 @@ def get_elder_medical_data(elder_id: int,db: Session= Depends(get_db)):
     return profile
 
 @router.patch("/{elder_id}")
-def update_elder_details(elder_id: int,data: ElderUpdate,db: Session= Depends(get_db) #,current_user= Depends(verify_access_to_elder)
-):
+def update_elder_details(elder_id: int,data: ElderUpdate,db: Session= Depends(get_db) ):
     updated = update_elder(db, elder_id, data)
 
     if updated == "no_fields":
@@ -36,4 +35,18 @@ def update_elder_details(elder_id: int,data: ElderUpdate,db: Session= Depends(ge
     db.commit()
     return{"message":"Elder updated successfully"}
 
+@router.get("/preferred-doctor/{elder_id}", response_model=PreferredDoctorResponse)
+def get_preferred_doc(elder_id: int,db: Session= Depends(get_db)):
+    doc= get_preferred_doctor(db, elder_id)
+    if not doc:
+        raise HTTPException(status_code=404)
+    return doc
 
+@router.patch("/preferred-doctor/{elder_id}")
+def update_preferred_doc(elder_id: int,data: UpdatePreferredDoctor, db: Session= Depends(get_db)):
+    updated = update_preferred_doctor(db, elder_id, data.preferred_doctor_id)
+    
+    if updated == "not_found":
+        raise HTTPException(status_code=404, detail="Elder profile not found")
+    db.commit()
+    return{"message":"Doctor details updated successfully"}

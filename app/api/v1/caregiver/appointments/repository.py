@@ -45,7 +45,8 @@ def get_all_appointments(db: Session, elder_id: int):
                 ORDER BY AppointmentDate, AppointmentTime
                  """)
     try:
-        return db.execute(query, {"elder_id": elder_id}).mappings().all()
+        row = db.execute(query, {"elder_id": elder_id}).mappings().all()
+        return [dict(r) for r in row]
     except SQLAlchemyError as e:
         raise RuntimeError("DB error while fetching appointments") from e
 
@@ -111,7 +112,8 @@ def upcoming_appointments(db: Session, elder_id: int):
                  ORDER BY AppointmentDate ASC, AppointmentTime ASC
                  """)
     try:
-        return db.execute(query, {"elder_id": elder_id}).mappings().all()
+        row = db.execute(query, {"elder_id": elder_id}).mappings().all()
+        return [dict(r) for r in row]
     except SQLAlchemyError as e:
         raise RuntimeError("DB error while fetching upcoming appointments") from e
         

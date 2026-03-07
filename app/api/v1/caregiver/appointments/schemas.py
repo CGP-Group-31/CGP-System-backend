@@ -4,16 +4,6 @@ from datetime import date, time, datetime
 import re
 
 NAME_REGEX = re.compile(r"^[A-Za-z][A-Za-z\s\.\-']{1,99}")
-TIME_RE = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")  # 24h HH:MM
-
-def normalize_hhmm(v: str) -> str:
-    v=v.strip()
-    if not TIME_RE.match(v):
-        raise ValueError("Invalid time format. Use format: HH:MM 24h")
-    hh, mm = v.split(":")
-    return time(hour=int(hh), minute=int(mm))
-
-
 
 
 class AppointmentCreate(BaseModel):
@@ -33,21 +23,6 @@ class AppointmentCreate(BaseModel):
             raise ValueError("Invalid doctor name")
         return v
 
-    @field_validator("appointment_date")
-    @classmethod 
-    def validate_date_not_in_past(cls, v:date):
-        if v<date.today():
-            raise ValueError("Appontments can not be in the past")
-        return v
-    
-    @field_validator("appointment_time" , mode="before")
-    @classmethod 
-    def validate_time(cls, v):
-        if isinstance(v, time):
-            return v
-        if isinstance(v, str):
-            return normalize_hhmm(v)
-        raise ValueError("Invalid appoinment time")
 
 
 class AppointmentResponse(BaseModel):
@@ -59,18 +34,8 @@ class AppointmentResponse(BaseModel):
     location: Optional[str] = Field(alias="Location")
     notes:Optional[str] = Field(alias="Notes")
     appointment_date: date = Field(alias="AppointmentDate")
-    appointment_time: str = Field(alias="AppointmentTime")  
+    appointment_time: Optional[time] = Field(alias="AppointmentTime")  
 
-    @field_validator("appointment_time", mode="before")
-    @classmethod 
-    def validate_time_to_hhmm(cls, v:str):
-        if isinstance(v, time):
-            return v.strftime("%H:%M")
-        if isinstance(v, str):
-            v=v.strip()
-            if re.match(r"^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$",v):
-                return v[:5]
-            raise ValueError("Invalid appointment time")
     
 
 
@@ -92,23 +57,4 @@ class AppointmentUpdate(BaseModel):
             raise ValueError("Invalid doctor name")
         return v
 
-    @field_validator("appointment_date")
-    @classmethod 
-    def validate_date_not_in_past(cls, v:Optional[date]):
-        if v is None:
-            return v
-        if v<date.today():
-            raise ValueError("Appontments can not be in the past")
-        return v
     
-    @field_validator("appointment_time", mode="before")
-    @classmethod 
-    def validate_time(cls, v:Optional[str]):
-        if v is None:
-            return v
-        if isinstance(v, time):
-            return v
-        if isinstance(v, str):
-            return normalize_hhmm(v)
-        raise ValueError("Invalid appointment time")
-
