@@ -31,6 +31,7 @@ class ElderUpdate(BaseModel):
     full_name: Optional[str]= Field(None, min_length=3, max_length=100)
     phone: Optional[str]= Field(None,min_length=8, max_length=12)
     address: Optional[str]=Field(None, min_length=3, max_length=200)
+    email: Optional[EmailStr] = Field(None, min_length=3, max_length=200)
 
     @field_validator("phone")
     @classmethod
@@ -52,5 +53,25 @@ class ElderUpdate(BaseModel):
         if not NAME_REGEX.match(v):
             raise ValueError("Invalid name")
         return v
+    
+    @field_validator("email")
+    @classmethod 
+    def normalize_email(cls, v:Optional[EmailStr]):
+        if v is None:
+            return v
+        return v.lower().strip()
 
+
+
+class PreferredDoctorResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    elder_id: int = Field(alias="ElderID")
+    preferred_doctor_id: int = Field(None,alias="PreferredDoctorID")
+    doctor_name: str = Field(None,alias="DoctorName")
+
+class UpdatePreferredDoctor(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    preferred_doctor_id:int = Field(alias="PreferredDoctorID")
 
