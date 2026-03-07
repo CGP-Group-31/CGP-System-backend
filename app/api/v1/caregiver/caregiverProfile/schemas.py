@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import date
 import re
 
-PHONE_REGEX = re.compile(r"^[0-9+\-\s]{8,12}$")
+PHONE_REGEX = re.compile(r"^[0-9+\-\s]{10,12}$")
 NAME_REGEX = re.compile(r"^[A-Za-z][A-Za-z\s\.\-']{1,99}")
 
 class CaregiverProfileResponse(BaseModel):
@@ -18,8 +18,8 @@ class CaregiverProfileResponse(BaseModel):
 
 class CaregiverProfileUpdate(BaseModel):
     full_name:Optional[str]=Field(None, min_length=3, max_length=100)
-    phone: Optional[str]=Field(None, min_length=8, max_length=12)
-    address: Optional[str] = Field(None, min_length=3, max_length=200)
+    phone: Optional[str]=Field(None, min_length=10, max_length=12)
+    address: Optional[str] = Field(None, min_length=0, max_length=200)
     email: Optional[EmailStr] = Field(None, min_length=3, max_length=200)
     password: Optional[str] = Field(None, min_length=3, max_length=200)
 
