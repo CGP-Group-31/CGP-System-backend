@@ -1,6 +1,6 @@
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from .schemas import ElderProfile
+from .schemas import ElderProfile, ElderDoctorUpdate, ElderDoctorUpdate
 from app.core.security import hash_password, verify_password
 from app.core.encryption import encrypt_text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -170,8 +170,8 @@ def search_doctors(
 
 
 # encripted data
-def update_elder_profile(db: Session, elder_id: int, data):
 
+def update_elder_profile(db: Session, elder_id: int, data):
     exists = db.execute(
         text("SELECT 1 FROM ElderProfiles WHERE ElderID = :elder_id"),
         {"elder_id": elder_id}
@@ -182,6 +182,7 @@ def update_elder_profile(db: Session, elder_id: int, data):
 
     update_fields = []
     params = {"elder_id": elder_id}
+
     if data.blood_type is not None:
         update_fields.append("BloodType = :blood_type")
         params["blood_type"] = data.blood_type
@@ -202,10 +203,6 @@ def update_elder_profile(db: Session, elder_id: int, data):
         update_fields.append("Pastsurgeries = :past_surgeries")
         params["past_surgeries"] = encrypt_text(data.past_surgeries)
 
-    if data.preferred_doctor_id is not None:
-        update_fields.append("PreferredDoctorID = :preferred_doctor_id")
-        params["preferred_doctor_id"] = data.preferred_doctor_id
-
     if not update_fields:
         return None, "No fields provided to update."
 
@@ -215,7 +212,32 @@ def update_elder_profile(db: Session, elder_id: int, data):
         db.execute(text(query), params)
         db.commit()
         return True, None
-
     except SQLAlchemyError:
         db.rollback()
         return None, "Database error occurred while updating profile."
+    
+def update_elder_preferred_doctor(db: Session, elder_id: int, preferred_doctor_id: int | None):
+
+    exists = db.execute(
+        text("SELECT 1 FROM ElderProfiles WHERE ElderID = :elder_id"),
+        {"elder_id": elder_id}
+    ).scalar_one_or_none()
+
+    if exists is None:
+        return None, "Elder profile not found."
+
+    try:
+        db.execute(
+            text("""UPDATE ElderProfiles SET PreferredDoctorID = :preferred_doctor_id WHERE ElderID = :elder_id"""),
+            {
+                "elder_id": elder_id,
+                "preferred_doctor_id": preferred_doctor_id
+            }
+        )
+
+        db.commit()
+        return True, None
+
+    except SQLAlchemyError:
+        db.rollback()
+        return None, "Database error occurred while updating preferred doctor."
