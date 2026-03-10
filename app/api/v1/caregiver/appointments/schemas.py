@@ -10,7 +10,7 @@ class AppointmentCreate(BaseModel):
     elder_id: int = Field(...,gt=0)
     doctor_name: str = Field(..., min_length=3, max_length=100)
     title: str = Field(..., min_length=2, max_length=100)
-    location: Optional[str] = Field(..., min_length=2, max_length=100)
+    location: Optional[str] = Field(None, min_length=2, max_length=100)
     notes: Optional[str] = Field(None, min_length=2, max_length=100)
     appointment_date: date
     appointment_time: time
