@@ -11,10 +11,17 @@ from app.core.exceptions import (
     sqlalchemy_exception_handler,
     generic_exception_handler
 )
+
+
+
+
+
+
 import app.modules.notifications.router
 from app.core.scheduler import start_scheduler
 from app.modules.notifications.router import router as notifications_router
 from app.messaging.routes import router as messaging_router
+
 
 
 #caregiver routes
@@ -28,6 +35,11 @@ from app.api.v1.caregiver.dashboard.routes import router as caregiver_dashboard
 from app.api.v1.caregiver.location.routes import router as caregiver_location
 from app.api.v1.caregiver.vital.routes import router as caregiver_vital_mgt
 from app.api.v1.caregiver.reminders.routes import router as caregiver_reminder
+from app.api.v1.caregiver.dataForm.routes import router as caregiver_additional_info
+
+
+
+
 
 
 #elder routes
@@ -39,8 +51,12 @@ from app.api.v1.elder.auth.routes import router as elder_auth
 from app.api.v1.elder.meals.routes import router as elder_meals
 from app.api.v1.elder.sos.routes import router as sos_router
 from app.api.v1.elder.medication_adherence.routes import router as elder_medication
+from app.api.v1.elder.elderDataForm.routes import router as elder_form_data
 # from app.api.v1.caregiver.profile.routes import router as caregiver_profile
 # from app.api.v1.caretaker.auth.routes import router as caretaker_auth
+
+
+
 
 
 
@@ -55,6 +71,10 @@ def on_startup():
 register_exception_handlers(app)
 
 
+
+
+
+
 #caregiver
 app.include_router(caregiver_create_elder, prefix="/api/v1/caregiver")
 app.include_router(caregiver_auth, prefix="/api/v1/caregiver")
@@ -66,6 +86,11 @@ app.include_router(caregiver_vital_mgt, prefix="/api/v1/caregiver")
 app.include_router(caregiver_dashboard, prefix="/api/v1/caregiver")
 app.include_router(caregiver_location, prefix="/api/v1/caregiver")
 app.include_router(caregiver_reminder, prefix="/api/v1/caregiver")
+app.include_router(caregiver_additional_info, prefix="/api/v1/caregiver")
+
+
+
+
 
 
 #elder routes
@@ -76,12 +101,15 @@ app.include_router(elder_profile, prefix="/api/v1/elder")
 app.include_router(elder_meals, prefix="/api/v1/elder")
 app.include_router(sos_router, prefix="/api/v1/elder")
 app.include_router(elder_medication, prefix="/api/v1/elder")
+app.include_router(elder_form_data, prefix="/api/v1/elder")
 
 app.include_router(notifications_router, prefix="/api/v1")
 app.include_router(notifications_router, prefix="/api/v1")
 
 # app.include_router(caregiver_profile, prefix="/api/v1/caregiver", tags=["Caregiver"])
 # app.include_router(caretaker_auth, prefix="/api/v1/caretaker", tags=["Caretaker"])
+
+
 
 
 
