@@ -64,6 +64,10 @@ def update_appointment(db: Session, appointment_id: int, data):
         query_part.append("Title= :title")
         update_field["title"] = data.title
 
+    if data.notes is not None:
+        query_part.append("Notes = :notes")
+        update_field["notes"] = data.notes
+
     if data.location is not None:
         query_part.append("Location= :location")
         update_field["location"] = data.location
@@ -107,16 +111,26 @@ def delete_appointment(db: Session, appointment_id: int):
 
 def upcoming_appointments(db: Session, elder_id: int):
     query = text("""
-                SELECT AppointmentID, ElderID, DoctorName, Title, Location, Notes, AppointmentDate, AppointmentTime FROM Appointments WHERE 
-                 ElderID = :elder_id AND AppointmentDate BETWEEN CAST(GETDATE() AS date) AND DATEADD(day,7,CAST(GETDATE() AS date))
-                 ORDER BY AppointmentDate ASC, AppointmentTime ASC
-                 """)
+        SELECT
+            AppointmentID,
+            ElderID,
+            DoctorName,
+            Title,
+            Location,
+            Notes,
+            AppointmentDate,
+            AppointmentTime
+        FROM Appointments
+        WHERE ElderID = :elder_id
+          AND AppointmentDate >= CAST(GETDATE() AS date)
+          AND AppointmentDate < DATEADD(day, 7, CAST(GETDATE() AS date))
+        ORDER BY AppointmentDate ASC, AppointmentTime ASC
+    """)
     try:
         row = db.execute(query, {"elder_id": elder_id}).mappings().all()
         return [dict(r) for r in row]
     except SQLAlchemyError as e:
         raise RuntimeError("DB error while fetching upcoming appointments") from e
-        
 
 
 def upsert_appointment_reminders(db: Session, appointment_id: int):
