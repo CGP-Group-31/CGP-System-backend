@@ -21,14 +21,10 @@ def create_appointments_for_elder(data: AppointmentCreate, db: Session = Depends
     return {"message": "Appointment created successfully", "appointment_id": appointment_id}
 
 
-@router.get("/elder/{elder_id}", response_model=List[AppointmentResponse])
-def get_all_appointments_of_elder(elder_id: int, db: Session = Depends(get_db)):
-    appointments = get_all_appointments(db, elder_id)
-
-    if not appointments:
-        raise HTTPException(status_code=404, detail="Appointments not found")
-    return appointments
-
+@router.get("/elder/{elder_id}/upcoming-7-days", response_model=List[AppointmentResponse])
+def get_appointment_of_7(elder_id: int, db: Session = Depends(get_db)):
+    appointment = upcoming_appointments(db, elder_id)
+    return appointment
 
 
 @router.patch("/{appointment_id}", response_model=dict)
@@ -56,6 +52,7 @@ def delete_appointment_for_elder(appointment_id: int, db: Session = Depends(get_
     deleted = delete_appointment(db, appointment_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Appointment not found")
+    db.commit()
     return {"message": "Appointment deleted successfully"}
 
 
