@@ -36,7 +36,7 @@ from app.api.v1.caregiver.location.routes import router as caregiver_location
 from app.api.v1.caregiver.vital.routes import router as caregiver_vital_mgt
 from app.api.v1.caregiver.reminders.routes import router as caregiver_reminder
 from app.api.v1.caregiver.dataForm.routes import router as caregiver_additional_info
-
+from app.api.v1.caregiver.complaints.routes import router as caregiver_complaints #New caregiver complaint route
 
 
 
@@ -56,6 +56,13 @@ from app.api.v1.elder.elderDataForm.routes import router as elder_form_data
 # from app.api.v1.caretaker.auth.routes import router as caretaker_auth
 
 
+
+
+
+
+
+#admin routes
+from app.api.v1.admin.complaints.routes import router as admin_complaints
 
 
 
@@ -87,7 +94,7 @@ app.include_router(caregiver_dashboard, prefix="/api/v1/caregiver")
 app.include_router(caregiver_location, prefix="/api/v1/caregiver")
 app.include_router(caregiver_reminder, prefix="/api/v1/caregiver")
 app.include_router(caregiver_additional_info, prefix="/api/v1/caregiver")
-
+app.include_router(caregiver_complaints, prefix="/api/v1/caregiver") #New caregiver complaint route
 
 
 
@@ -110,7 +117,8 @@ app.include_router(notifications_router, prefix="/api/v1")
 # app.include_router(caretaker_auth, prefix="/api/v1/caretaker", tags=["Caretaker"])
 
 
-
+# admin
+app.include_router(admin_complaints, prefix="/api/v1/admin")
 
 
 
