@@ -58,7 +58,7 @@ from app.api.v1.elder.elderDataForm.routes import router as elder_form_data
 
 #AI Routes
 from app.api.v1.ai_system.ai_chat_message.routes import router as aisys_chat_message
-
+from app.api.v1.ai_system.checkin_debug import router as checkin_debug_router
 
 app = FastAPI(
     title="TrustCare Backend API system",
@@ -114,7 +114,7 @@ app.include_router(notifications_router, prefix="/api/v1")
 #AI 
 app.include_router(aisys_chat_message, prefix="/api/v1/ai_system", tags=["AI System"]) 
 
-
+app.include_router(checkin_debug_router)
 
 app.include_router(messaging_router)
 @app.get("/health")
