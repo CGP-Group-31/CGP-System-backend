@@ -83,9 +83,10 @@ def validate_submission_window(db: Session, elder_id: int):
     now_local = datetime.now(tz)
     current_time = now_local.time()
 
-    start_time = time(15, 0, 0)  # 3:00 PM
+    start_time = time(15, 0, 0)  
+    end_time = time(23, 59, 59)
 
-    if current_time < start_time:
+    if not (start_time <= current_time <= end_time):
         raise ValueError(
             f"Inputs are allowed only from 3:00 PM to 12:00 AM in the elder's timezone. "
             f"Current local time: {now_local.strftime('%Y-%m-%d %H:%M:%S %z')}"

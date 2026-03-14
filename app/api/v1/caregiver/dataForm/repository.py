@@ -3,67 +3,26 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, time, timedelta, timezone
 from math import ceil
-import re
-
-_TZ_OFFSET_RE = re.compile(r"([+-])\s*(\d{2}):(\d{2})")
 
 
 def cal_week_num(phone_date):
     return ceil(phone_date.day / 7)
 
 
-def parse_db_timezone(tz_value: str):
-   
-    if tz_value is None:
-        raise ValueError("User timezone is missing")
-
-    tz_str = str(tz_value).strip()
-    if not tz_str:
-        raise ValueError("User timezone is missing")
-
-    match = _TZ_OFFSET_RE.search(tz_str)
-    if not match:
-        raise ValueError(f"Invalid timezone format in DB: {tz_str}")
-
-    sign, hours, minutes = match.groups()
-    hours = int(hours)
-    minutes = int(minutes)
-
-    offset = timedelta(hours=hours, minutes=minutes)
-    if sign == "-":
-        offset = -offset
-
-    return timezone(offset, name=tz_str)
-
-
-def get_user_timezone(db: Session, user_id: int):
-    query = text("""
-        SELECT Timezone
-        FROM Users
-        WHERE UserID = :user_id
-    """)
-
-    row = db.execute(query, {"user_id": user_id}).mappings().first()
-
-    if not row:
-        raise ValueError(f"User {user_id} not found")
-
-    return parse_db_timezone(row["Timezone"])
-
-
-def validate_submission_window(db: Session, caregiver_id: int):
+def validate_submission_window():
     
-    tz = get_user_timezone(db, caregiver_id)
-    now_local = datetime.now(tz)
-    current_time = now_local.time()
+    now_server = datetime.now()
+    current_time = now_server.time()
 
     start_time = time(15, 0, 0)  # 3:00 PM
+    end_time = time(23, 59, 59)
 
-    if current_time < start_time:
+    if not (start_time <= current_time <= end_time):
         raise ValueError(
             f"Inputs are allowed only from 3:00 PM to 12:00 midnight in caregiver's timezone. "
-            f"Current local time: {now_local.strftime('%Y-%m-%d %H:%M:%S %z')}"
+            f"Current local time: {now_server.strftime('%Y-%m-%d %H:%M:%S %z')}"
         )
+    return now_server
 
 
 def validate_user_exist(db: Session, elder_id: int, caregiver_id: int):
@@ -85,13 +44,46 @@ def validate_user_exist(db: Session, elder_id: int, caregiver_id: int):
 
     if caregiver_id not in found:
         raise ValueError("Invalid caregiver_id")
+    
+
+def validate_weekly_submission(db: Session, elder_id: int, caregiver_id: int, current_date):
+    week_no = cal_week_num(current_date)
+    month_no = current_date.month
+    year_no = current_date.year
+
+    query = text("""
+        SELECT TOP 1 AdditionalInfoID
+        FROM ElderAdditionalInfo
+        WHERE ElderID = :elder_id
+          AND CaregiverID = :caregiver_id
+          AND WeekNumber = :week_number
+          AND MONTH(InfoDate) = :month_no
+          AND YEAR(InfoDate) = :year_no
+    """)
+
+    row = db.execute(
+        query,
+        {
+            "elder_id": elder_id,
+            "caregiver_id": caregiver_id,
+            "week_number": week_no,
+            "month_no": month_no,
+            "year_no": year_no
+        }
+    ).mappings().first()
+
+    if row:
+        raise ValueError("Weekly observation already submitted for this elder in the current week.")
 
 
 def insert_additional_elder_info(db: Session, data):
     validate_user_exist(db, data.elder_id, data.caregiver_id)
-    validate_submission_window(db, data.caregiver_id)
 
-    week_no = cal_week_num(data.phone_date)
+    now_sever = validate_submission_window()
+    current_date = now_sever.date()
+    week_no = cal_week_num(current_date)
+
+    validate_weekly_submission(db, data.elder_id, data.caregiver_id, current_date)
 
     query = text("""
         INSERT INTO ElderAdditionalInfo (
