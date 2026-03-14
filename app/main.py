@@ -37,6 +37,7 @@ from app.api.v1.caregiver.vital.routes import router as caregiver_vital_mgt
 from app.api.v1.caregiver.reminders.routes import router as caregiver_reminder
 from app.api.v1.caregiver.dataForm.routes import router as caregiver_additional_info
 from app.api.v1.caregiver.reports.routes import router as care_reports_router
+from app.api.v1.caregiver.complaints.routes import router as caregiver_complaints #New caregiver complaint route
 
 
 
@@ -60,6 +61,13 @@ from app.api.v1.elder.elderDataForm.routes import router as elder_form_data
 from app.api.v1.ai_system.ai_chat_message.routes import router as aisys_chat_message
 from app.api.v1.ai_system.vital.routes import router as aisys_vital_mgt
 from app.api.v1.ai_system.elder_additional_info.routes import router as aisys_elder_additional_info
+
+
+
+#admin routes
+from app.api.v1.admin.complaints.routes import router as admin_complaints
+
+
 
 
 app = FastAPI(
@@ -91,6 +99,7 @@ app.include_router(caregiver_reminder, prefix="/api/v1/caregiver")
 app.include_router(caregiver_additional_info, prefix="/api/v1/caregiver")
 app.include_router(care_reports_router, prefix="/api/v1/caregiver") 
 
+app.include_router(caregiver_complaints, prefix="/api/v1/caregiver") #New caregiver complaint route
 
 
 
@@ -117,6 +126,8 @@ app.include_router(notifications_router, prefix="/api/v1")
 app.include_router(aisys_chat_message, prefix="/api/v1/ai_system", tags=["AI System"]) 
 app.include_router(aisys_vital_mgt, prefix="/api/v1/ai_system", tags=["AI System"]) 
 app.include_router(aisys_elder_additional_info, prefix="/api/v1/ai_system", tags=["AI System"]) 
+# admin
+app.include_router(admin_complaints, prefix="/api/v1/admin")
 
 
 
