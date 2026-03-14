@@ -58,6 +58,8 @@ from app.api.v1.elder.elderDataForm.routes import router as elder_form_data
 
 #AI Routes
 from app.api.v1.ai_system.ai_chat_message.routes import router as aisys_chat_message
+from app.api.v1.ai_system.vital.routes import router as aisys_vital_mgt
+from app.api.v1.ai_system.elder_additional_info.routes import router as aisys_elder_additional_info
 
 
 app = FastAPI(
@@ -113,6 +115,8 @@ app.include_router(notifications_router, prefix="/api/v1")
 
 #AI 
 app.include_router(aisys_chat_message, prefix="/api/v1/ai_system", tags=["AI System"]) 
+app.include_router(aisys_vital_mgt, prefix="/api/v1/ai_system", tags=["AI System"]) 
+app.include_router(aisys_elder_additional_info, prefix="/api/v1/ai_system", tags=["AI System"]) 
 
 
 
