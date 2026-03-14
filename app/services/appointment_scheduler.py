@@ -21,18 +21,16 @@ def _get_latest_token(db: Session, user_id: int, app_type: str) -> str | None:
 
 
 def _get_primary_caregiver_id(db: Session, elder_id: int) -> int | None:
-    q = text("""SELECT TOP 1 CaregiverID FROM CareRelationships WHERE ElderID = :eid
+    q = text("""SELECT TOP 1 CaregiverID FROM CareRelationships WHERE ElderID = :eid AND IsPrimary = 1
         ORDER BY IsPrimary DESC, RelationshipID ASC;""")
     row = db.execute(q, {"eid": elder_id}).fetchone()
     return int(row.CaregiverID) if row else None
 
 
 def run_due_appointment_reminders(db: Session):
-    """
-    Sends reminders that are due now (PENDING and ScheduledFor <= now).
-    Sends to elder + primary caregiver (latest token only).
-    Marks reminder SENT if at least one send succeeds, else SKIPPED.
-    """
+  
+
+  
     now = datetime.now(TZ)
 
     q = text("""SELECT ar.ReminderID, ar.ReminderType, ar.AppointmentID, ar.ScheduledFor,
