@@ -1,4 +1,4 @@
-# app/services/hydration_scheduler.py
+# app/services/checking_scheduler.py
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -11,13 +11,11 @@ from app.services.fcm_service import send_push_notification
 
 SERVER_TZ = ZoneInfo("Asia/Colombo")
 
-# Hydration slots in user's LOCAL time
-HYDRATION_SLOTS = [
-    (9, 0),   # 09:00
-    (15, 0),  # 15:00
-    (20, 0),  # 20:00
+# Daily AI check-in slots in user's LOCAL time
+CHECKING_SLOTS = [
+    ("MORNING", 7, 0),   # 07:00
+    ("EVENING", 16, 0),  # 16:00
 ]
-
 
 # "IST +05:30"
 # "+05:30"
@@ -34,6 +32,7 @@ class UserDeviceRow:
 
 
 def _parse_timezone_offset_minutes(tz_text: str) -> int:
+
     if not tz_text:
         return 330
 
@@ -55,30 +54,27 @@ def _user_local_now(server_now: datetime, tz_text: str) -> datetime:
     return server_now.astimezone(ZoneInfo("UTC")) + timedelta(minutes=offset_min)
 
 
-def _hydration_message_for_hour(hour: int) -> tuple[str, str]:
-    if hour == 9:
-        return (
-            "Hydration Reminder",
-            "Good morning! Please drink a glass of water now. Staying hydrated keeps you strong."
-        )
+def _checking_message_for_slot(slot_name: str, full_name: str) -> tuple[str, str]:
+    name = full_name.strip() or "there"
 
-    if hour == 15:
+    if slot_name == "MORNING":
         return (
-            "Time to Drink Water",
-            "It’s afternoon. Please take a few sips of water now. Your body will thank you."
+            "Morning AI Check-In",
+            f"Good morning, {name}. Your AI daily check-in has started now and will be open until 11:50 AM. "
+            f"Take a moment to share how you are feeling."
         )
 
     return (
-        "Evening Hydration",
-        "Good evening! Drink some water before you rest. Hydration helps your health."
+        "Evening AI Check-In",
+        f"Good afternoon, {name}. Your AI daily check-in has started now and will be open until 11:50 PM. "
+        f"Please share your day with your AI companion and complete your daily behavior form."
     )
 
 
-def run_due_hydration_reminders(db: Session) -> None:
+def run_due_checking_reminders(db: Session) -> None:
     server_now = datetime.now(SERVER_TZ).replace(second=0, microsecond=0)
 
-    q = text("""
-        SELECT
+    q = text("""SELECT
             u.UserID,
             u.FullName,
             u.Timezone,
@@ -94,9 +90,7 @@ def run_due_hydration_reminders(db: Session) -> None:
                 SELECT MAX(ud2.LastUpdated)
                 FROM UserDevices ud2
                 WHERE ud2.UserID = u.UserID
-                  AND ud2.app_type = 'elder'
-          );
-    """)
+                  AND ud2.app_type = 'elder');""")
 
     rows = db.execute(q).fetchall()
 
@@ -110,13 +104,14 @@ def run_due_hydration_reminders(db: Session) -> None:
 
         local_now = _user_local_now(server_now, user.tz_text)
 
-        for hh, mm in HYDRATION_SLOTS:
+        for slot_name, hh, mm in CHECKING_SLOTS:
             if local_now.hour == hh and local_now.minute == mm:
-                title, body = _hydration_message_for_hour(hh)
+                title, body = _checking_message_for_slot(slot_name, user.full_name)
 
                 data_payload = {
-                    "type": "HYDRATION_REMINDER",
+                    "type": "DAILY_CHECKING_REMINDER",
                     "userId": str(user.user_id),
+                    "session": slot_name,
                     "localTime": local_now.strftime("%H:%M"),
                     "localDate": local_now.date().isoformat(),
                 }
@@ -129,6 +124,6 @@ def run_due_hydration_reminders(db: Session) -> None:
                         data=data_payload,
                     )
                 except Exception as e:
-                    print(f"Hydration reminder send failed for user {user.user_id}: {e}")
+                    print(f"Daily checking reminder send failed for user {user.user_id}: {e}")
 
                 break

@@ -6,6 +6,7 @@ from app.services.medication_scheduler import ( run_due_medication_reminders, ma
 from app.services.appointment_scheduler import run_due_appointment_reminders
 from app.services.hydration_scheduler import run_due_hydration_reminders
 from app.services.meal_scheduler import run_due_meal_reminders, mark_missed_meals
+from app.services.checking_scheduler import run_due_checking_reminders
 
 scheduler = BackgroundScheduler(timezone="Asia/Colombo")
 
@@ -14,7 +15,7 @@ def start_scheduler():
     if scheduler.running:
         return
 
-    scheduler.add_job(
+    scheduler.add_job(  # working
         func=_medication_job,
         trigger=IntervalTrigger(minutes=1),
         id="medication_reminders",
@@ -74,6 +75,16 @@ def start_scheduler():
         misfire_grace_time=60,
     )
 
+    scheduler.add_job(
+        func=_checking_job,
+        trigger=IntervalTrigger(minutes=1),
+        id="daily_checking_reminders",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+        misfire_grace_time=30,
+    )
+
     scheduler.start()
 
 
@@ -125,5 +136,12 @@ def _meal_mark_missed_job():
     db = SessionLocal()
     try:
         mark_missed_meals(db)
+    finally:
+        db.close()
+
+def _checking_job():
+    db = SessionLocal()
+    try:
+        run_due_checking_reminders(db)
     finally:
         db.close()

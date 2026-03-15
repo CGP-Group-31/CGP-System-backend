@@ -68,6 +68,7 @@ from app.api.v1.ai_system.elder_additional_info.routes import router as aisys_el
 
 
 
+
 app = FastAPI(
     title="TrustCare Backend API system",
     version="1.0.0"
