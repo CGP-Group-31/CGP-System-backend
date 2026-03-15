@@ -64,8 +64,7 @@ from app.api.v1.ai_system.elder_additional_info.routes import router as aisys_el
 
 
 
-#admin routes
-from app.api.v1.admin.complaints.routes import router as admin_complaints
+
 
 
 
@@ -126,8 +125,7 @@ app.include_router(notifications_router, prefix="/api/v1")
 app.include_router(aisys_chat_message, prefix="/api/v1/ai_system", tags=["AI System"]) 
 app.include_router(aisys_vital_mgt, prefix="/api/v1/ai_system", tags=["AI System"]) 
 app.include_router(aisys_elder_additional_info, prefix="/api/v1/ai_system", tags=["AI System"]) 
-# admin
-app.include_router(admin_complaints, prefix="/api/v1/admin")
+
 
 
 
