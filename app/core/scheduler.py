@@ -2,7 +2,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from app.core.database import SessionLocal
-from app.services.medication_scheduler import ( run_due_medication_reminders, mark_missed_adherence,)
+from app.services.medication_scheduler import ( run_due_medication_reminders, mark_missed_adherence, deactivate_expired_medication_schedules )
 from app.services.appointment_scheduler import run_due_appointment_reminders
 from app.services.hydration_scheduler import run_due_hydration_reminders
 from app.services.meal_scheduler import run_due_meal_reminders, mark_missed_meals
@@ -96,6 +96,7 @@ def shutdown_scheduler():
 def _medication_job():
     db = SessionLocal()
     try:
+        deactivate_expired_medication_schedules(db)
         run_due_medication_reminders(db)
     finally:
         db.close()

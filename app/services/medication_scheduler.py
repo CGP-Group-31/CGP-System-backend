@@ -1,15 +1,17 @@
 # app/services/medication_scheduler.py
-from datetime import datetime, date, time as dtime
+from datetime import datetime, date
+from zoneinfo import ZoneInfo
+
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
 from app.services.fcm_service import send_medication_push
-from zoneinfo import ZoneInfo
 
 TZ = ZoneInfo("Asia/Colombo")
 
-
 STATUS_PENDING = 1
 STATUS_MISSED = 3
+
 
 def is_due_today(repeat_days: str, start_date: date, today: date) -> bool:
     repeat_days = (repeat_days or "").strip()
@@ -24,8 +26,20 @@ def is_due_today(repeat_days: str, start_date: date, today: date) -> bool:
     return today.strftime("%a") in allowed
 
 
-#  Then define the scheduler
-def run_due_medication_reminders(db: Session):
+def deactivate_expired_medication_schedules(db: Session) -> None:
+  
+    today = datetime.now(TZ).date()
+
+    q = text("""UPDATE MedicationSchedules SET IsActive = 0
+        WHERE IsActive = 1
+          AND EndDate IS NOT NULL
+          AND EndDate < :today""")
+
+    db.execute(q, {"today": today})
+    db.commit()
+
+
+def run_due_medication_reminders(db: Session) -> None:
     now = datetime.now(TZ)
     today = now.date()
 
@@ -51,6 +65,7 @@ def run_due_medication_reminders(db: Session):
 
         if today < r.StartDate:
             continue
+
         if r.EndDate and today > r.EndDate:
             continue
 
@@ -68,13 +83,26 @@ def run_due_medication_reminders(db: Session):
         )
 
         exists = db.execute(text("""SELECT 1 FROM MedicationAdherence
-            WHERE ScheduleID = :sid AND ElderID = :eid AND ScheduledFor = :sf"""), {"sid": r.ScheduleID, "eid": r.ElderID, "sf": scheduled_for}).fetchone()
+                WHERE ScheduleID = :sid AND ElderID = :eid AND ScheduledFor = :sf"""),
+            {
+                "sid": r.ScheduleID,
+                "eid": r.ElderID,
+                "sf": scheduled_for
+            }
+        ).fetchone()
 
         if exists:
             continue
 
         db.execute(text("""INSERT INTO MedicationAdherence (ScheduleID, ElderID, StatusID, ScheduledFor)
-            VALUES (:sid, :eid, 1, :sf)"""), {"sid": r.ScheduleID, "eid": r.ElderID, "sf": scheduled_for})
+            VALUES (:sid, :eid, :status_id, :sf)"""),
+            {
+                "sid": r.ScheduleID,
+                "eid": r.ElderID,
+                "status_id": STATUS_PENDING,
+                "sf": scheduled_for
+            }
+        )
 
         send_medication_push(
             token=r.FCMToken,
@@ -94,8 +122,8 @@ def run_due_medication_reminders(db: Session):
 
     db.commit()
 
-def mark_missed_adherence(db: Session):
 
+def mark_missed_adherence(db: Session) -> None:
     now = datetime.now(TZ)
     now_for_db = now.replace(tzinfo=None)
 

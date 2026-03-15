@@ -11,8 +11,9 @@ from .repository import (
     create_medication_schedules,
     get_medications_by_elder,
     update_medication,
-    update_medication_schedules,
-    deactivate_medication
+    deactivate_medication,
+    replace_medication_schedules
+
 )
 
 router = APIRouter(prefix="/medication", tags=["Medication"])
@@ -73,12 +74,10 @@ def update_medication_api(
     data: MedicationUpdateRequest,
     db: Session = Depends(get_db)
 ):
-
     try:
-
         update_medication(db, medication_id, data)
 
-        update_medication_schedules(
+        replace_medication_schedules(
             db=db,
             medication_id=medication_id,
             times=data.times,
@@ -88,13 +87,14 @@ def update_medication_api(
         )
 
         db.commit()
-
         return {"message": "Medication updated successfully"}
 
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.delete("/delete/{medication_id}")
 def delete_medication(medication_id: int, db: Session = Depends(get_db)):

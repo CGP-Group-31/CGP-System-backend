@@ -98,26 +98,26 @@ def get_medications_by_elder(db: Session, elder_id: int):
 
 
 def update_medication(db: Session, medication_id: int, data):
-
     query = text("""
         UPDATE Medications
-        SET 
+        SET
             MedicationName = :name,
             Dosage = :dosage,
             Instructions = :instructions
-        WHERE MedicationID = :medication_id
-        AND IsActive = 1
-    """)
+        WHERE MedicationID = :medication_id AND IsActive = 1""")
 
-    db.execute(query, {
+    result = db.execute(query, {
         "name": data.name,
         "dosage": data.dosage,
         "instructions": data.instructions,
         "medication_id": medication_id
     })
 
+    if result.rowcount == 0:
+        raise Exception("Medication not found or inactive")
 
-def update_medication_schedules(
+
+def replace_medication_schedules(
     db: Session,
     medication_id: int,
     times,
@@ -125,20 +125,27 @@ def update_medication_schedules(
     start_date,
     end_date
 ):
+    delete_adherence_query = text("""
+        DELETE ma
+        FROM MedicationAdherence ma
+        INNER JOIN MedicationSchedules ms
+            ON ma.ScheduleID = ms.ScheduleID
+        WHERE ms.MedicationID = :medication_id""")
+    db.execute(delete_adherence_query, {"medication_id": medication_id})
 
-    delete_query = text("""
+    #  delete old schedules
+    delete_schedules_query = text("""
         DELETE FROM MedicationSchedules
         WHERE MedicationID = :medication_id
     """)
+    db.execute(delete_schedules_query, {"medication_id": medication_id})
 
-    db.execute(delete_query, {"medication_id": medication_id})
-
+    #  insert new schedules
     insert_query = text("""
         INSERT INTO MedicationSchedules
-        (MedicationID, TimeOfDay, RepeatDays, StartDate, EndDate)
+            (MedicationID, TimeOfDay, RepeatDays, StartDate, EndDate)
         VALUES
-        (:medication_id, :time_of_day, :repeat_days, :start_date, :end_date)
-    """)
+            (:medication_id, :time_of_day, :repeat_days, :start_date, :end_date)""")
 
     for t in times:
         db.execute(insert_query, {
@@ -148,7 +155,6 @@ def update_medication_schedules(
             "start_date": start_date,
             "end_date": end_date
         })
-
 
 def deactivate_medication(db: Session, medication_id: int):
 
