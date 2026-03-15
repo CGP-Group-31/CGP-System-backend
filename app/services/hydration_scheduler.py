@@ -18,11 +18,10 @@ HYDRATION_SLOTS = [
     (20, 0),  # 20:00
 ]
 
-# Parse strings like:
+
 # "IST +05:30"
 # "+05:30"
-# "UTC+05:30"
-# "GMT +05:30"
+
 _TZ_OFFSET_RE = re.compile(r"([+-])\s*(\d{2}):(\d{2})")
 
 
@@ -35,10 +34,6 @@ class UserDeviceRow:
 
 
 def _parse_timezone_offset_minutes(tz_text: str) -> int:
-    """
-    Extract offset minutes from a string like "IST +05:30".
-    If not found, default to Asia/Colombo (UTC+05:30).
-    """
     if not tz_text:
         return 330
 
@@ -55,8 +50,7 @@ def _parse_timezone_offset_minutes(tz_text: str) -> int:
 
 def _user_local_now(server_now: datetime, tz_text: str) -> datetime:
     """
-    Convert server time to user's local time using offset.
-    """
+    Convert server time to user's local time using offset."""
     offset_min = _parse_timezone_offset_minutes(tz_text)
     return server_now.astimezone(ZoneInfo("UTC")) + timedelta(minutes=offset_min)
 

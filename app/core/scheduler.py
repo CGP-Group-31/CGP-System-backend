@@ -6,7 +6,7 @@ from app.services.medication_scheduler import ( run_due_medication_reminders, ma
 from app.services.appointment_scheduler import run_due_appointment_reminders
 from app.services.hydration_scheduler import run_due_hydration_reminders
 from app.services.meal_scheduler import run_due_meal_reminders, mark_missed_meals
-from app.services.checking_scheduler import run_checkin_scheduler
+from app.services.checking_scheduler import run_due_checking_reminders
 
 scheduler = BackgroundScheduler(timezone="Asia/Colombo")
 
@@ -76,13 +76,13 @@ def start_scheduler():
     )
 
     scheduler.add_job(
-        func=_checkin_job,
+        func=_checking_job,
         trigger=IntervalTrigger(minutes=1),
-        id="checkin_scheduler_job",
+        id="daily_checking_reminders",
         replace_existing=True,
         max_instances=1,
         coalesce=True,
-        misfire_grace_time=10,
+        misfire_grace_time=30,
     )
 
     scheduler.start()
@@ -139,13 +139,9 @@ def _meal_mark_missed_job():
     finally:
         db.close()
 
-def _checkin_job():
+def _checking_job():
     db = SessionLocal()
     try:
-        triggered = run_checkin_scheduler(db)
-        if triggered:
-            print("[CheckIn Job Triggered]", triggered)
-    except Exception as e:
-        print(f"[CheckIn Job Error] {e}")
+        run_due_checking_reminders(db)
     finally:
         db.close()

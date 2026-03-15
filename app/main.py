@@ -69,7 +69,7 @@ from app.api.v1.admin.complaints.routes import router as admin_complaints
 
 
 
-from app.api.v1.ai_system.checkin_debug import router as checkin_debug_router
+
 
 app = FastAPI(
     title="TrustCare Backend API system",
@@ -130,7 +130,7 @@ app.include_router(aisys_elder_additional_info, prefix="/api/v1/ai_system", tags
 # admin
 app.include_router(admin_complaints, prefix="/api/v1/admin")
 
-app.include_router(checkin_debug_router)
+
 
 app.include_router(messaging_router)
 @app.get("/health")
