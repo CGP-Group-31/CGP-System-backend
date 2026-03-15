@@ -28,7 +28,7 @@ def create_elder_form(data: ElderFormCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/elder/{elder_id}/latest", response_model=ElderFormResponse)
+@router.get("/{elder_id}/latest", response_model=ElderFormResponse)
 def fetch_latest_elder_form(elder_id: int, db: Session = Depends(get_db)):
     try:
         row = get_latest_elder_form(db, elder_id)
