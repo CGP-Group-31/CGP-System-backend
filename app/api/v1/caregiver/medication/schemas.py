@@ -88,7 +88,7 @@ class MedicationCreateResponse(BaseModel):
 
 
 class MedicationUpdateRequest(BaseModel):
-
+    
     name: str
     dosage: str
     instructions: str
