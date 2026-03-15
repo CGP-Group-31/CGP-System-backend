@@ -1,6 +1,11 @@
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
+CHECK_USER_EXISTS = text("""
+    SELECT 1
+    FROM Users
+    WHERE UserID = :complainant_id
+""")
 
 INSERT_COMPLAINT = text("""
     INSERT INTO Complaints (ComplainantID, Subject, Description)
@@ -10,6 +15,14 @@ INSERT_COMPLAINT = text("""
 
 def create_complaint(db, data):
     try:
+        user_exists = db.execute(
+            CHECK_USER_EXISTS,
+            {"complainant_id": data.complainant_id}
+        ).scalar()
+
+        if not user_exists:
+            return None, "Complainant does not exist."
+
         db.execute(INSERT_COMPLAINT, {
             "complainant_id": data.complainant_id,
             "subject": data.subject,
@@ -20,7 +33,7 @@ def create_complaint(db, data):
 
     except IntegrityError:
         db.rollback()
-        return None, "Invalid complainant ID or complaint data."
+        return None, "Invalid complaint data."
 
     except SQLAlchemyError:
         db.rollback()
