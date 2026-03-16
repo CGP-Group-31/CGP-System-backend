@@ -24,6 +24,8 @@ from app.messaging.routes import router as messaging_router
 
 
 
+
+
 #caregiver routes
 from app.api.v1.caregiver.auth.routes import router as caregiver_auth
 from app.api.v1.caregiver.createelder.routes import router as caregiver_create_elder
@@ -62,7 +64,8 @@ from app.api.v1.ai_system.ai_chat_message.routes import router as aisys_chat_mes
 from app.api.v1.ai_system.vital.routes import router as aisys_vital_mgt
 from app.api.v1.ai_system.elder_additional_info.routes import router as aisys_elder_additional_info
 
-
+#daily reports routes
+from app.api.v1.daily_reporting.routes import router as daily_reports_router
 
 
 
@@ -119,7 +122,8 @@ app.include_router(notifications_router, prefix="/api/v1")
 
 # app.include_router(caregiver_profile, prefix="/api/v1/caregiver", tags=["Caregiver"])
 
-
+#daily reports
+app.include_router(daily_reports_router, prefix="/api/v1")
 
 #AI 
 app.include_router(aisys_chat_message, prefix="/api/v1/ai_system", tags=["AI System"]) 
