@@ -11,6 +11,9 @@ if not firebase_admin._apps:
 
 
 def send_medication_push(token: str, title: str, body: str, data: dict | None = None):
+
+    if not token:
+        return None
     # payload = {k: str(v) for k, v in (data or {}).items()}
     payload = {}
 
