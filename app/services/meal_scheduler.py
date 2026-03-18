@@ -164,7 +164,12 @@ def run_due_meal_reminders(db: Session) -> None:
                 }
 
                 try:
-                    send_push_notification(elder.fcm_token, title, body, payload)
+                    send_push_notification(
+                        token=elder.fcm_token,
+                        title=title,
+                        body=body,
+                        data=payload,
+                    )
                 except Exception as e:
                     print(f"Meal reminder send failed for elder {elder.elder_id}: {e}")
 
@@ -182,7 +187,7 @@ def mark_missed_meals(db: Session) -> None:
             SET StatusID = :missed_status,
                 UpdatedAt = GETDATE()
             WHERE StatusID = :pending_status
-              AND DATEADD(hour, 24, ScheduledFor) <= :now
+              AND DATEADD(hour, 6, ScheduledFor) <= :now
         """),
         {
             "missed_status": STATUS_MISSED,

@@ -13,17 +13,26 @@ class UpdateMealStatusRequest(BaseModel):
 
     @field_validator("mealTime")
     @classmethod
-    def validate_meal_time(cls, v: str) -> str:
+    def validate_meal_time(cls, v: str):
+
         meal = v.strip().upper()
+
         if meal not in ("BREAKFAST", "LUNCH", "DINNER"):
-            raise ValueError("mealTime must be BREAKFAST, LUNCH, or DINNER")
+            raise ValueError(
+                "mealTime must be BREAKFAST, LUNCH, or DINNER"
+            )
+
         return meal
 
     @field_validator("statusId")
     @classmethod
-    def validate_status_id(cls, v: int) -> int:
-        if v not in (2, 3, 4):  # Taken, Missed, Skipped
-            raise ValueError("statusId must be 2 (Taken), 3 (Missed), or 4 (Skipped)")
+    def validate_status_id(cls, v: int):
+
+        if v not in (2, 3, 4):
+            raise ValueError(
+                "statusId must be 2 (Taken), 3 (Missed), or 4 (Skipped)"
+            )
+
         return v
 
 
@@ -33,6 +42,7 @@ class MealItemResponse(BaseModel):
     MealTime: str
     ScheduledFor: datetime
     StatusID: int
+    StatusName: str
     Diet: Optional[str] = None
     UpdatedAt: datetime
 
