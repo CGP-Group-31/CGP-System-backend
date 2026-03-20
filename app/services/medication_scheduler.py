@@ -38,6 +38,19 @@ def deactivate_expired_medication_schedules(db: Session) -> None:
     db.execute(q, {"today": today})
     db.commit()
 
+    try:
+        db.execute(text("""UPDATE m SET m.IsActive = 0 FROM Medications m
+            INNER JOIN MedicationSchedules ms ON ms.MedicationID = m.MedicationID
+            WHERE m.IsActive = 1
+              AND ms.EndDate IS NOT NULL
+              AND ms.EndDate < :today"""), {"today": today})
+
+        db.commit()
+
+    except Exception as e:
+        db.rollback()
+        print("ERROR in deactivate_expired_medications:", e)
+        raise
 
 def run_due_medication_reminders(db: Session) -> None:
     now = datetime.now(TZ)

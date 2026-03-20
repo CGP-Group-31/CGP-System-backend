@@ -29,6 +29,10 @@ Built with **FastAPI**, **MSSQL**, **SQLAlchemy Core**, and **Firebase Cloud Mes
 - Windows + VS Code
 
 ---
+#Download the SQL Server ODBC Driver 17  (https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver17)
+
+
+Windows:   https://go.microsoft.com/fwlink/?linkid=2266337
 
 ##  Clone the Repository
 in that location
