@@ -1,10 +1,10 @@
 ﻿from datetime import datetime, time, timedelta
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from .repository import get_vitals_for_elder_in_range
-from .schemas import ElderVitalsLastWeekResponse
+from .repository import get_vitals_for_elder_in_range, get_last_week_daily_reports,get_last_week_sos_logs
+from .schemas import ElderVitalsLastWeekResponse, WeeklyDailyReportsResponse, SOSWeeklyResponse
 
 router = APIRouter(prefix="/vitals", tags=["AI System"])
 
@@ -47,4 +47,42 @@ def get_elder_vitals_last_week(
         "week_start_date": week_start_date,
         "week_end_date": week_end_date,
         "records": records,
+    }
+
+
+@router.get("/last-week-daily/{elder_id}",response_model=WeeklyDailyReportsResponse,status_code=200)
+def get_last_week_daily_reports_api(
+    elder_id: int,
+    db: Session = Depends(get_db)
+):
+    reports, week_start, week_end, error = get_last_week_daily_reports(db, elder_id)
+
+    if error:
+        if error == "User not found.":
+            raise HTTPException(status_code=404, detail=error)
+        raise HTTPException(status_code=400, detail=error)
+
+    return {
+        "week_start": week_start,
+        "week_end": week_end,
+        "reports": reports
+    }
+
+
+@router.get("/sos-week/{elder_id}", response_model=SOSWeeklyResponse)
+def get_last_week_sos_logs_api(
+    elder_id: int,
+    db: Session = Depends(get_db)
+):
+    sos_logs, week_start, week_end, error = get_last_week_sos_logs(db, elder_id)
+
+    if error:
+        if error == "Elder not found.":
+            raise HTTPException(status_code=404, detail=error)
+        raise HTTPException(status_code=400, detail=error)
+
+    return {
+        "week_start": week_start,
+        "week_end": week_end,
+        "sos_logs": sos_logs
     }
