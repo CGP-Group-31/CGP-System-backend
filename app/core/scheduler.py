@@ -89,7 +89,7 @@ def start_scheduler():
 
     scheduler.add_job(
         func=_daily_report_job,
-        trigger=IntervalTrigger(minutes=5),
+        trigger=IntervalTrigger(minutes=1),
         id="daily_report_generation",
         replace_existing=True,
         max_instances=1,

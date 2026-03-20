@@ -11,7 +11,7 @@ def get_active_elders_for_reports(db: Session):
         SELECT UserID, Timezone
         FROM Users
         WHERE RoleID = 5
-          AND IsActive = 1
+        AND IsActive = 1 AND Timezone IS NOT NULL AND LTRIM(RTRIM(Timezone)) <> ''
     """)
     return db.execute(q).mappings().all()
 
@@ -36,25 +36,37 @@ async def run_due_daily_reports(db: Session):
     now_utc = utc_now()
     elders = get_active_elders_for_reports(db)
 
+    print(f"[daily-report] utc_now={now_utc.isoformat()} elders_with_timezone={len(elders)}")
+
     for elder in elders:
         elder_id = int(elder["UserID"])
-        tz_text = elder.get("Timezone") or ""
+        tz_text = elder["Timezone"]
 
-        offset_minutes = parse_offset_minutes(tz_text)
-        local_now = now_utc + timedelta(minutes=offset_minutes)
+        try:
+            offset_minutes = parse_offset_minutes(tz_text)
+            local_now = now_utc + timedelta(minutes=offset_minutes)
 
-        if not (local_now.hour == 0 and 30 <= local_now.minute < 35):
-            continue
+            print(
+                f"[daily-report] elder={elder_id}, tz={tz_text!r}, "
+                f"offset_minutes={offset_minutes}, local_now={local_now.isoformat()}"
+            )
 
-        report_date = (local_now.date() - timedelta(days=1)).isoformat()
+            if not (local_now.hour == 0 and local_now.minute == 30):
+                continue
 
-        if report_exists_for_day(db, elder_id, report_date):
-            continue
+            report_date = (local_now.date() - timedelta(days=1)).isoformat()
 
-        await trigger_daily_report_generation(
-            elder_id=elder_id,
-            report_date=report_date
-        )
-        print(f"[daily-report] checking elder={elder_id}, tz={tz_text}, local_now={local_now}")
-        print(f"[daily-report] generating report for elder={elder_id}, report_date={report_date}")
-        
+            if report_exists_for_day(db, elder_id, report_date):
+                print(f"[daily-report] already exists elder={elder_id}, report_date={report_date}")
+                continue
+            
+            print(f"[daily-report] generating elder={elder_id}, report_date={report_date}")
+
+            await trigger_daily_report_generation(
+                elder_id=elder_id,
+                report_date=report_date
+            )
+            print(f"[daily-report] success elder={elder_id}, report_date={report_date}")
+
+        except Exception as e:
+            print(f"[daily-report] skipped elder={elder_id}, tz={tz_text!r}, error={e}")
