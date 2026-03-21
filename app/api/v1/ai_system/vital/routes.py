@@ -6,10 +6,10 @@ from app.core.database import get_db
 from .repository import get_vitals_for_elder_in_range, get_last_week_daily_reports,get_last_week_sos_logs
 from .schemas import ElderVitalsLastWeekResponse, WeeklyDailyReportsResponse, SOSWeeklyResponse
 
-router = APIRouter(prefix="/vitals", tags=["AI System"])
+router = APIRouter(prefix="/weekly-reports", tags=["AI System"])
 
 
-@router.get("/elder/{elder_id}/last-week", response_model=ElderVitalsLastWeekResponse)
+@router.get("/elder/{elder_id}/vitals/last-week", response_model=ElderVitalsLastWeekResponse)
 def get_elder_vitals_last_week(
     elder_id: int,
     db: Session = Depends(get_db),
