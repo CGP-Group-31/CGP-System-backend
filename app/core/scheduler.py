@@ -8,6 +8,7 @@ from app.services.hydration_scheduler import run_due_hydration_reminders
 from app.services.meal_scheduler import run_due_meal_reminders, mark_missed_meals
 from app.services.checking_scheduler import run_due_checking_reminders
 from app.services.daily_report_scheduler import run_due_daily_reports
+from app.services.weekly_report_scheduler import run_due_weekly_reports
 import asyncio
 
 scheduler = BackgroundScheduler(timezone="Asia/Colombo")
@@ -97,6 +98,16 @@ def start_scheduler():
         misfire_grace_time=120,
     )
 
+    scheduler.add_job(
+    func=_weekly_report_job,
+    trigger=IntervalTrigger(minutes=1),
+    id="weekly_report_generation",
+    replace_existing=True,
+    max_instances=1,
+    coalesce=True,
+    misfire_grace_time=300,
+)
+
     scheduler.start()
 
 
@@ -163,5 +174,12 @@ def _daily_report_job():
     db = SessionLocal()
     try:
         asyncio.run(run_due_daily_reports(db))
+    finally:
+        db.close()
+
+def _weekly_report_job():
+    db = SessionLocal()
+    try:
+        asyncio.run(run_due_weekly_reports(db))
     finally:
         db.close()
