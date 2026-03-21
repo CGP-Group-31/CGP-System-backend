@@ -66,19 +66,19 @@ def run_due_appointment_reminders(db: Session):
         elder_title = "Doctor Appointment Reminder"
         elder_body = (
             f"Hi {elder_name}, you have a doctor appointment {label}.\n\n"
-            f"Title: {r.Title or 'Appointment'}\n"
-            f"Doctor: {r.DoctorName or '-'}\n"
-            f"Time: {appt_dt_text}\n"
-            f"Place: {r.Location or '-'}\n"
+            f"{r.Title or 'Appointment'}\n"
+            f"Doctor {r.DoctorName or '-'}\n"
+            f"Time {appt_dt_text}\n"
+            f"Place {r.Location or '-'}\n"
         )
 
         caregiver_title = "Appointment Reminder"
         caregiver_body = (
             f"Reminder: {elder_name} has an appointment {label}.\n\n"
-            f"Title: {r.Title or 'Appointment'}\n"
-            f"Doctor: {r.DoctorName or '-'}\n"
-            f"Time: {appt_dt_text}\n"
-            f"Place: {r.Location or '-'}\n"
+            f"{r.Title or 'Appointment'}\n"
+            f"Doctor {r.DoctorName or '-'}\n"
+            f"Time {appt_dt_text}\n"
+            f"Place {r.Location or '-'}\n"
         )
 
         data_payload = {
