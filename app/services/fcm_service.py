@@ -1,9 +1,16 @@
 from pathlib import Path
 import firebase_admin
 from firebase_admin import credentials, messaging
+from app.core.config import settings
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SERVICE_ACCOUNT_PATH = BASE_DIR / "services" / "serviceAccountKey.json"
+
+SERVICE_ACCOUNT_PATH = Path(settings.FIREBASE_CREDENTIALS_PATH)
+
+if not SERVICE_ACCOUNT_PATH.is_absolute():
+    SERVICE_ACCOUNT_PATH = BASE_DIR / settings.FIREBASE_CREDENTIALS_PATH
+
 
 if not firebase_admin._apps:
     cred = credentials.Certificate(str(SERVICE_ACCOUNT_PATH))
@@ -11,25 +18,22 @@ if not firebase_admin._apps:
 
 
 def send_medication_push(token: str, title: str, body: str, data: dict | None = None):
-
     if not token:
         return None
-    # payload = {k: str(v) for k, v in (data or {}).items()}
+
     payload = {}
 
+    # Convert all values to string (FCM requires string values)
     if data:
         for key, value in data.items():
             payload[key] = str(value)
 
-        # Take the dictionary.
-        # If it exists, convert all values to text.
-        # If it doesn't exist, use empty dictionary.
-
+    # Add title/body into data (data-only message)
     payload["title"] = title
     payload["body"] = body
 
     message = messaging.Message(
-        data=payload,  #  data-only for reliable app handling
+        data=payload,
         android=messaging.AndroidConfig(
             priority="high",
         ),
