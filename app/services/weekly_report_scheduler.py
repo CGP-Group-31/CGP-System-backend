@@ -42,8 +42,6 @@ async def run_due_weekly_reports(db: Session):
 
     elders = get_active_elders_for_reports(db)
 
-    print(f"[weekly-report] utc_now={now_utc.isoformat()} elders={len(elders)}")
-
     for elder in elders:
 
         elder_id = int(elder["UserID"])
@@ -52,19 +50,13 @@ async def run_due_weekly_reports(db: Session):
         try:
 
             offset_minutes = parse_offset_minutes(tz_text)
-
             local_now = now_utc + timedelta(minutes=offset_minutes)
-
-            print(
-                f"[weekly-report] elder={elder_id}, tz={tz_text}, "
-                f"local_now={local_now.isoformat()}"
-            )
 
             # Monday = 0
             if not (
                 local_now.weekday() == 0
                 and local_now.hour == 2
-                and local_now.minute == 0
+                
             ):
                 continue
 
@@ -75,28 +67,12 @@ async def run_due_weekly_reports(db: Session):
             week_end = week_end_date.isoformat()
 
             if report_exists_for_week(db, elder_id, week_start, week_end):
-
-                print(
-                    f"[weekly-report] already exists elder={elder_id} "
-                    f"{week_start} → {week_end}"
-                )
-
                 continue
-
-            print(
-                f"[weekly-report] generating elder={elder_id} "
-                f"{week_start} → {week_end}"
-            )
 
             await trigger_weekly_report_generation(
                 elder_id=elder_id,
                 week_start=week_start,
                 week_end=week_end
-            )
-
-            print(
-                f"[weekly-report] success elder={elder_id} "
-                f"{week_start} → {week_end}"
             )
 
         except Exception as e:
