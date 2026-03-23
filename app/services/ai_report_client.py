@@ -19,7 +19,7 @@ async def trigger_daily_report_generation(elder_id: int, report_date: str) -> di
 
 async def trigger_weekly_report_generation(elder_id: int, week_start: str, week_end: str):
 
-    url = f"{settings.API_BASE_URL}/reports/weekly/generate"
+    url = f"{settings.AI_BACKEND_URL}/reports/weekly/generate"
 
     payload = {
         "elder_id": elder_id,
